@@ -2,6 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <application
         android:allowBackup="true"
@@ -17,5 +18,15 @@
         <activity android:name=".SmaranActivityPhase3" android:exported="false" />
         <activity android:name=".reminder.RescheduleActivity" android:exported="false" />
         <receiver android:name=".reminder.receiver.ReminderReceiver" android:exported="false" />
+        <receiver
+            android:name=".reminder.receiver.BootReceiver"
+            android:directBootAware="false"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
     </application>
 </manifest>

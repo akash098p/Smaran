@@ -15,7 +15,6 @@
             </intent-filter>
         </activity>
         <activity android:name=".SmaranActivityPhase3" android:exported="false" />
-        <activity android:name=".SmaranActivityV3" android:exported="false" />
         <activity android:name=".reminder.RescheduleActivity" android:exported="false" />
         <receiver android:name=".reminder.receiver.ReminderReceiver" android:exported="false" />
     </application>

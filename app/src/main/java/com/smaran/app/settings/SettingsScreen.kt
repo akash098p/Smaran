@@ -54,7 +54,6 @@ fun Settings(context: Context) {
         return
     }
 
-    // Touching profileVersion forces the card to read the latest saved profile values.
     val currentName = profile.name
     val currentEmail = profile.email
     val currentImage = profile.profileImageUri
@@ -119,7 +118,11 @@ private fun ProfileAvatar(name: String, imageUri: String, size: Int) {
 @Composable
 private fun SettingsItem(entry: SettingsEntry, onClick: () -> Unit) {
     Row(Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 15.dp), verticalAlignment = Alignment.CenterVertically) {
-        Icon(entry.icon, entry.title, tint = SettingsMuted, modifier = Modifier.size(24.dp))
+        Surface(modifier = Modifier.size(40.dp), shape = RoundedCornerShape(12.dp), color = Color(0xFFF1EDFF)) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(entry.icon, entry.title, tint = SettingsPurple, modifier = Modifier.size(21.dp))
+            }
+        }
         Spacer(Modifier.width(14.dp))
         Column(Modifier.weight(1f)) {
             Text(entry.title, fontSize = 16.sp, fontWeight = FontWeight.Medium, color = SettingsNavy)
@@ -138,22 +141,13 @@ private fun ProfileEditor(profile: ProfilePreferences, onSaved: () -> Unit, onBa
     val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri -> if (uri != null) imageUri = uri.toString() }
 
     LazyColumn(Modifier.fillMaxSize().padding(horizontal = 20.dp), contentPadding = PaddingValues(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        item {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Back") }
-                Text("Profile", fontSize = 25.sp, fontWeight = FontWeight.Bold, color = SettingsNavy)
-            }
-        }
+        item { Row(verticalAlignment = Alignment.CenterVertically) { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Back") }; Text("Profile", fontSize = 25.sp, fontWeight = FontWeight.Bold, color = SettingsNavy) } }
         item {
             Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = Color.White), modifier = Modifier.fillMaxWidth()) {
                 Column(Modifier.fillMaxWidth().padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     ProfileAvatar(name, imageUri, 96)
                     Spacer(Modifier.height(10.dp))
-                    OutlinedButton(onClick = { imagePicker.launch("image/*") }) {
-                        Icon(Icons.Default.PhotoCamera, null)
-                        Spacer(Modifier.width(8.dp))
-                        Text("Change profile picture")
-                    }
+                    OutlinedButton(onClick = { imagePicker.launch("image/*") }) { Icon(Icons.Default.PhotoCamera, null); Spacer(Modifier.width(8.dp)); Text("Change profile picture") }
                     Text("Only stored locally on this device", color = SettingsMuted, fontSize = 11.sp)
                 }
             }
@@ -174,9 +168,7 @@ private fun ProfileEditor(profile: ProfilePreferences, onSaved: () -> Unit, onBa
                 profile.age = age.trim()
                 profile.profileImageUri = imageUri
                 onSaved()
-            }, modifier = Modifier.fillMaxWidth().height(52.dp), shape = RoundedCornerShape(14.dp), colors = ButtonDefaults.buttonColors(containerColor = SettingsPurple)) {
-                Text("Save Profile", fontWeight = FontWeight.Bold)
-            }
+            }, modifier = Modifier.fillMaxWidth().height(52.dp), shape = RoundedCornerShape(14.dp), colors = ButtonDefaults.buttonColors(containerColor = SettingsPurple)) { Text("Save Profile", fontWeight = FontWeight.Bold) }
         }
     }
 }
@@ -193,7 +185,7 @@ private fun SettingsDetailPage(title: String, state: SettingsUiState, manager: S
                         "Reminders" -> {
                             SettingSwitch("Reminder sound", "Play sound with reminder notifications", Icons.Default.VolumeUp, state.soundEnabled) { manager.setSoundEnabled(it); refresh() }
                             SettingSwitch("Vibration", "Vibrate for reminder notifications", Icons.Default.Vibration, state.vibrationEnabled) { manager.setVibrationEnabled(it); refresh() }
-                            SettingAction("Exact alarm permission", "Allow reliable scheduled reminders", Icons.Default.Alarm) { AlarmPermissionHelper.openExactAlarmSettings(context) }
+                            SettingAction("Exact alarm permission", "Allow reliable scheduled reminders", Icons.Default.Alarm, context) { AlarmPermissionHelper.openExactAlarmSettings(context) }
                             Text("Quick snooze", fontWeight = FontWeight.Bold, color = SettingsNavy, modifier = Modifier.padding(top = 8.dp))
                             SettingsScreenModel.snoozeOptions().forEach { minutes -> SettingChoice(SettingsScreenModel.snoozeLabel(minutes), minutes == state.defaultSnoozeMinutes) { manager.setDefaultSnoozeMinutes(minutes); refresh() } }
                         }
@@ -216,7 +208,7 @@ private fun SettingsDetailPage(title: String, state: SettingsUiState, manager: S
 @Composable
 private fun SettingSwitch(title: String, subtitle: String, icon: ImageVector, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
     Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-        Icon(icon, title, tint = SettingsPurple, modifier = Modifier.size(24.dp))
+        Surface(modifier = Modifier.size(38.dp), shape = RoundedCornerShape(11.dp), color = Color(0xFFF1EDFF)) { Box(contentAlignment = Alignment.Center) { Icon(icon, title, tint = SettingsPurple, modifier = Modifier.size(21.dp)) } }
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) { Text(title, fontWeight = FontWeight.SemiBold, color = SettingsNavy); Text(subtitle, color = SettingsMuted, fontSize = 11.sp) }
         Switch(checked = checked, onCheckedChange = onCheckedChange)
@@ -224,9 +216,9 @@ private fun SettingSwitch(title: String, subtitle: String, icon: ImageVector, ch
 }
 
 @Composable
-private fun SettingAction(title: String, subtitle: String, icon: ImageVector, onClick: () -> Unit) {
+private fun SettingAction(title: String, subtitle: String, icon: ImageVector, context: Context, onClick: () -> Unit) {
     Row(Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-        Icon(icon, title, tint = SettingsPurple, modifier = Modifier.size(24.dp))
+        Surface(modifier = Modifier.size(38.dp), shape = RoundedCornerShape(11.dp), color = Color(0xFFF1EDFF)) { Box(contentAlignment = Alignment.Center) { Icon(icon, title, tint = SettingsPurple, modifier = Modifier.size(21.dp)) } }
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) { Text(title, fontWeight = FontWeight.SemiBold, color = SettingsNavy); Text(subtitle, color = SettingsMuted, fontSize = 11.sp) }
         Icon(Icons.Default.ChevronRight, "Open", tint = SettingsMuted)
@@ -236,7 +228,7 @@ private fun SettingAction(title: String, subtitle: String, icon: ImageVector, on
 @Composable
 private fun SettingChoice(title: String, selected: Boolean, onClick: () -> Unit) {
     Row(Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 9.dp), verticalAlignment = Alignment.CenterVertically) {
-        Icon(if (selected) Icons.Default.RadioButtonChecked else Icons.Default.RadioButtonUnchecked, title, tint = if (selected) SettingsPurple else SettingsMuted, modifier = Modifier.size(22.dp))
+        Surface(modifier = Modifier.size(30.dp), shape = CircleShape, color = if (selected) Color(0xFFF1EDFF) else Color.Transparent) { Box(contentAlignment = Alignment.Center) { Icon(if (selected) Icons.Default.RadioButtonChecked else Icons.Default.RadioButtonUnchecked, title, tint = if (selected) SettingsPurple else SettingsMuted, modifier = Modifier.size(21.dp)) } }
         Spacer(Modifier.width(10.dp))
         Text(title, color = SettingsNavy)
     }
@@ -245,7 +237,7 @@ private fun SettingChoice(title: String, selected: Boolean, onClick: () -> Unit)
 @Composable
 private fun InfoBlock(icon: ImageVector, title: String, message: String) {
     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-        Icon(icon, title, tint = SettingsPurple, modifier = Modifier.size(44.dp))
+        Surface(modifier = Modifier.size(60.dp), shape = CircleShape, color = Color(0xFFF1EDFF)) { Box(contentAlignment = Alignment.Center) { Icon(icon, title, tint = SettingsPurple, modifier = Modifier.size(30.dp)) } }
         Spacer(Modifier.height(12.dp))
         Text(title, fontWeight = FontWeight.Bold, color = SettingsNavy)
         Spacer(Modifier.height(6.dp))

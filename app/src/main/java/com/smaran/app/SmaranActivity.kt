@@ -175,23 +175,226 @@ private fun complete(task: Task, store: TaskStore, scheduler: ReminderScheduler,
 @Composable private fun Settings() { LazyColumn(Modifier.fillMaxSize().padding(horizontal = 20.dp), contentPadding = PaddingValues(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) { item { Text("Settings", fontSize = 27.sp, fontWeight = FontWeight.Bold) }; item { Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = Color.White), modifier = Modifier.fillMaxWidth()) { Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) { Avatar(); Spacer(Modifier.width(14.dp)); Column { Text("Akash", fontWeight = FontWeight.Bold); Text("Local Smaran profile", color = Muted, fontSize = 12.sp) } } } }; item { Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = Color.White), modifier = Modifier.fillMaxWidth()) { Column { listOf("General","Reminders","Appearance","Backup & Restore","Data & Storage","Notifications","Privacy","About Smaran").forEach { label -> Row(Modifier.fillMaxWidth().clickable { }.padding(16.dp), verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Default.Settings, null, tint = Muted); Spacer(Modifier.width(14.dp)); Text(label, Modifier.weight(1f)); Text("›", color = Muted, fontSize = 22.sp) } } } } } } }
 
 @Composable private fun Avatar() { Box(Modifier.size(48.dp).clip(CircleShape).background(Color(0xFFEDE5FF)), Alignment.Center) { Text("A", color = Purple, fontWeight = FontWeight.Bold, fontSize = 20.sp) } }
-@Composable private fun TaskCard(task: Task, complete: ((Task) -> Unit)?) { val color = when(task.category) { "Work" -> Red; "Study" -> Purple; "Health" -> Green; else -> Orange }; Card(shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = Color.White), modifier = Modifier.fillMaxWidth()) { Row(Modifier.padding(13.dp), verticalAlignment = Alignment.CenterVertically) { Box(Modifier.width(3.dp).height(45.dp).background(color)); Spacer(Modifier.width(12.dp)); Column(Modifier.weight(1f)) { Text(task.title, fontWeight = FontWeight.SemiBold, color = if(task.completed) Muted else Color(0xFF171728)); Text("${task.date} · ${task.time.format(DateTimeFormatter.ofPattern("hh:mm a"))}", color = Muted, fontSize = 11.sp); Spacer(Modifier.height(4.dp)); Chip(task.category, false) {} }; if(complete != null) Icon(Icons.Default.CheckCircle, "Complete", tint = Purple, modifier = Modifier.size(25.dp).clickable { complete(task) }) else if(task.completed) Icon(Icons.Default.Check, "Completed", tint = Green) } } }
-@Composable private fun Chip(text: String, selected: Boolean, onClick: () -> Unit) { Box(Modifier.clip(RoundedCornerShape(20.dp)).background(if(selected) Purple else Color(0xFFF1EFF7)).clickable { onClick() }.padding(horizontal = 12.dp, vertical = 7.dp)) { Text(text, color = if(selected) Color.White else Color(0xFF171728), fontSize = 10.sp, fontWeight = FontWeight.SemiBold) } }
-@Composable private fun AddButton(add: () -> Unit) { Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) { Button(onClick = add, shape = CircleShape, colors = ButtonDefaults.buttonColors(containerColor = Purple), contentPadding = PaddingValues(0.dp), modifier = Modifier.size(54.dp)) { Icon(Icons.Default.Add, "Add task") } } }
-@Composable private fun Empty(title: String, body: String, add: () -> Unit) { Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = Color.White), modifier = Modifier.fillMaxWidth()) { Column(Modifier.fillMaxWidth().padding(22.dp), horizontalAlignment = Alignment.CenterHorizontally) { Icon(Icons.Default.AccessTime, null, tint = Purple); Spacer(Modifier.height(8.dp)); Text(title, fontWeight = FontWeight.Bold); Text(body, color = Muted, fontSize = 12.sp, textAlign = TextAlign.Center); Spacer(Modifier.height(10.dp)); OutlinedButton(onClick = add) { Text("Create task") } } } }
+@Composable
+private fun TaskCard(
+    task: Task,
+    complete: ((Task) -> Unit)?
+) {
+    val color = when (task.category) {
+        "Work" -> Red
+        "Study" -> Purple
+        "Health" -> Green
+        else -> Orange
+    }
 
-@Composable private fun AddTask(onDismiss: () -> Unit, create: (String, String, LocalDate, LocalTime, String, Priority) -> Unit) {
-    val context = LocalContext.current; var title by remember { mutableStateOf("") }; var description by remember { mutableStateOf("") }; var date by remember { mutableStateOf(LocalDate.now()) }; var time by remember { mutableStateOf(LocalTime.now().plusMinutes(5).withSecond(0).withNano(0)) }; var category by remember { mutableStateOf("Personal") }; var priority by remember { mutableStateOf(Priority.MEDIUM) }
-    AlertDialog(onDismissRequest = onDismiss, title = { Text("New Task") }, text = { Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        OutlinedTextField(title, { title = it }, Modifier.fillMaxWidth(), singleLine = true, label = { Text("Task title") })
-        OutlinedTextField(description, { description = it }, Modifier.fillMaxWidth(), singleLine = true, label = { Text("Description") })
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) { OutlinedButton(Modifier.weight(1f), onClick = { DatePickerDialog(context, { _, y, m, d -> date = LocalDate.of(y, m + 1, d) }, date.year, date.monthValue - 1, date.dayOfMonth).show() }) { Text(date.format(DateTimeFormatter.ofPattern("dd MMM"))) }; OutlinedButton(Modifier.weight(1f), onClick = { TimePickerDialog(context, { _, h, m -> time = LocalTime.of(h, m) }, time.hour, time.minute, false).show() }) { Text(time.format(DateTimeFormatter.ofPattern("hh:mm a"))) } }
-        LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) { listOf("Personal","Work","Study","Health").forEach { value -> item { Chip(value, value == category) { category = value } } } }
-        LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) { Priority.entries.forEach { value -> item { Chip(value.name.lowercase().replaceFirstChar { it.uppercase() }, value == priority) { priority = value } } } }
-    } }, confirmButton = { TextButton(enabled = title.isNotBlank(), onClick = { create(title.trim(), description.trim(), date, time, category, priority) }) { Text("Create", color = Purple) } }, dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } })
+    Card(
+        shape = RoundedCornerShape(14.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            Modifier.padding(13.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                Modifier
+                    .width(3.dp)
+                    .height(45.dp)
+                    .background(color)
+            )
+
+            Spacer(Modifier.width(12.dp))
+
+            Column(Modifier.weight(1f)) {
+                Text(
+                    task.title,
+                    fontWeight = FontWeight.SemiBold,
+                    color = if (task.completed) {
+                        Muted
+                    } else {
+                        Color(0xFF171728)
+                    }
+                )
+
+                Text(
+                    "${task.date} · ${
+                        task.time.format(
+                            DateTimeFormatter.ofPattern("hh:mm a")
+                        )
+                    }",
+                    color = Muted,
+                    fontSize = 11.sp
+                )
+
+                Spacer(Modifier.height(4.dp))
+
+                Chip(
+                    text = task.category,
+                    selected = false,
+                    onClick = {}
+                )
+            }
+
+            if (complete != null) {
+                Icon(
+                    Icons.Default.CheckCircle,
+                    "Complete",
+                    tint = Purple,
+                    modifier = Modifier
+                        .size(25.dp)
+                        .clickable {
+                            complete(task)
+                        }
+                )
+            } else if (task.completed) {
+                Icon(
+                    Icons.Default.Check,
+                    "Completed",
+                    tint = Green
+                )
+            }
+        }
+    }
 }
 
 @Composable private fun Onboarding(done: () -> Unit) { var page by rememberSaveable { mutableIntStateOf(0) }; val titles = listOf("Welcome to Smaran","Plan Your Tasks","Smart Reminders","Track & Improve","Let's Achieve More"); val bodies = listOf("Your intelligent reminder companion.","Create tasks with date & time and never miss what matters.","Get reminders with 15 min, 30 min and 1 hour snooze actions.","View history, statistics and build better habits.","Stay focused, stay productive and achieve your goals."); Column(Modifier.fillMaxSize().background(Navy).padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) { Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) { TextButton(onClick = done) { Text("Skip", color = Color.White) } }; Spacer(Modifier.height(60.dp)); Text(listOf("⌛","✓","🔔","▣","✓")[page], fontSize = 64.sp); Spacer(Modifier.height(30.dp)); Text(titles[page], color = Color.White, fontSize = 27.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center); Spacer(Modifier.height(12.dp)); Text(bodies[page], color = Color.White.copy(.8f), textAlign = TextAlign.Center); Spacer(Modifier.weight(1f)); Button(onClick = { if(page == 4) done() else page++ }, Modifier.fillMaxWidth().height(54.dp), shape = RoundedCornerShape(16.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD9BFFF))) { Text(if(page == 4) "Get Started →" else "Next", color = Navy, fontWeight = FontWeight.Bold) } } }
 
 private fun greeting() = when(LocalTime.now().hour) { in 0..11 -> "Good Morning, 👋"; in 12..16 -> "Good Afternoon, 👋"; else -> "Good Evening, 👋" }
 private fun streak(tasks: List<Task>): Int { var date = LocalDate.now(); val done = tasks.filter { it.completed }.map { it.date }.toSet(); var count = 0; while(done.contains(date)) { count++; date = date.minusDays(1) }; return count }
+
+@Composable
+private fun AddTask(
+    onDismiss: () -> Unit,
+    onSave: (String, String, LocalDate, LocalTime, String, Priority) -> Unit
+) {
+    val context = LocalContext.current
+    var title by remember { mutableStateOf("") }
+    var description by remember { mutableStateOf("") }
+    var date by remember { mutableStateOf(LocalDate.now()) }
+    var time by remember { mutableStateOf(LocalTime.now().plusHours(1).withMinute(0)) }
+    var category by remember { mutableStateOf("Personal") }
+    var priority by remember { mutableStateOf(Priority.MEDIUM) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("New Reminder", fontWeight = FontWeight.Bold) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedTextField(
+                    value = title,
+                    onValueChange = { title = it },
+                    label = { Text("Title") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+                OutlinedTextField(
+                    value = description,
+                    onValueChange = { description = it },
+                    label = { Text("Description (Optional)") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(
+                        onClick = {
+                            DatePickerDialog(context, { _, y, m, d ->
+                                date = LocalDate.of(y, m + 1, d)
+                            }, date.year, date.monthValue - 1, date.dayOfMonth).show()
+                        },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text(date.format(DateTimeFormatter.ofPattern("MMM d, yyyy")))
+                    }
+                    OutlinedButton(
+                        onClick = {
+                            TimePickerDialog(context, { _, h, m ->
+                                time = LocalTime.of(h, m)
+                            }, time.hour, time.minute, false).show()
+                        },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text(time.format(DateTimeFormatter.ofPattern("hh:mm a")))
+                    }
+                }
+                Text("Category", fontSize = 12.sp, color = Muted, fontWeight = FontWeight.Bold)
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    items(listOf("Personal", "Work", "Study", "Health")) { cat ->
+                        Chip(cat, category == cat) { category = cat }
+                    }
+                }
+                Text("Priority", fontSize = 12.sp, color = Muted, fontWeight = FontWeight.Bold)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Priority.entries.forEach { p ->
+                        Chip(p.name, priority == p) { priority = p }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { onSave(title, description, date, time, category, priority) },
+                enabled = title.isNotBlank(),
+                colors = ButtonDefaults.buttonColors(containerColor = Purple),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text("Save Task")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel", color = Muted)
+            }
+        },
+        shape = RoundedCornerShape(24.dp),
+        containerColor = Color.White
+    )
+}
+
+@Composable
+private fun Empty(title: String, subtitle: String, onAdd: () -> Unit) {
+    Column(
+        Modifier.fillMaxWidth().padding(vertical = 40.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Icon(Icons.Default.EventNote, null, modifier = Modifier.size(64.dp), tint = Muted.copy(alpha = 0.3f))
+        Spacer(Modifier.height(16.dp))
+        Text(title, fontWeight = FontWeight.Bold, color = Navy)
+        Text(subtitle, color = Muted, fontSize = 14.sp)
+        Spacer(Modifier.height(24.dp))
+        OutlinedButton(onClick = onAdd, shape = RoundedCornerShape(12.dp)) {
+            Text("Add your first task", color = Purple)
+        }
+    }
+}
+
+@Composable
+private fun AddButton(onClick: () -> Unit) {
+    OutlinedButton(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth().height(56.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = ButtonDefaults.outlinedButtonColors(contentColor = Purple)
+    ) {
+        Icon(Icons.Default.Add, null)
+        Spacer(Modifier.width(8.dp))
+        Text("Create New Task", fontWeight = FontWeight.Bold)
+    }
+}
+
+@Composable
+private fun Chip(text: String, selected: Boolean, onClick: () -> Unit) {
+    Surface(
+        color = if (selected) Purple else Color(0xFFF3F2F8),
+        shape = RoundedCornerShape(10.dp),
+        modifier = Modifier.clickable { onClick() }
+    ) {
+        Text(
+            text = text,
+            color = if (selected) Color.White else Muted,
+            fontSize = 12.sp,
+            fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+        )
+    }
+}

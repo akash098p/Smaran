@@ -1,6 +1,8 @@
 package com.smaran.app.settings
 
 import android.content.Context
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -13,12 +15,20 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.foundation.Image
+import androidx.compose.ui.res.painterResource
+import androidx.compose.foundation.background
+import coil.compose.AsyncImage
+import com.smaran.app.profile.ProfilePreferences
 import com.smaran.app.reminder.AlarmPermissionHelper
 
 private val SettingsPurple = Color(0xFF5B2BD9)
@@ -34,20 +44,36 @@ private data class SettingsEntry(
 @Composable
 fun Settings(context: Context) {
     val manager = remember { SettingsManager(context) }
+    val profile = remember { ProfilePreferences(context) }
     var state by remember { mutableStateOf(manager.read()) }
     var page by rememberSaveable { mutableStateOf<String?>(null) }
+    var profileVersion by remember { mutableIntStateOf(0) }
 
     if (page != null) {
-        SettingsDetailPage(
-            title = page!!,
-            state = state,
-            manager = manager,
-            context = context,
-            refresh = { state = manager.read() },
-            onBack = { page = null }
-        )
+        if (page == "Profile") {
+            ProfileEditor(
+                profile = profile,
+                onSaved = { profileVersion++; page = null },
+                onBack = { page = null }
+            )
+        } else {
+            SettingsDetailPage(
+                title = page!!,
+                state = state,
+                manager = manager,
+                context = context,
+                refresh = { state = manager.read() },
+                onBack = { page = null }
+            )
+        }
         return
     }
+
+    // Read the current profile on every recomposition triggered by profileVersion.
+    val currentName = profile.name
+    val currentEmail = profile.email
+    val currentImage = profile.profileImageUri
+    @Suppress("UNUSED_VARIABLE") val profileRefresh = profileVersion
 
     val entries = listOf(
         SettingsEntry("General", "Basic app preferences", Icons.Default.Tune),
@@ -56,7 +82,7 @@ fun Settings(context: Context) {
         SettingsEntry("Backup & Restore", "Protect your local tasks", Icons.Default.Backup),
         SettingsEntry("Data & Storage", "Local task data", Icons.Default.Storage),
         SettingsEntry("Notifications", "Notification behavior", Icons.Default.Notifications),
-        SettingsEntry("Privacy", "Your local data", Icons.Default.PrivacyTip),
+        SettingsEntry("Privacy", "Your local data", Icons.Default.Lock),
         SettingsEntry("About Smaran", "Version and project information", Icons.Default.Info)
     )
 
@@ -67,16 +93,19 @@ fun Settings(context: Context) {
     ) {
         item { Text("Settings", fontSize = 27.sp, fontWeight = FontWeight.Bold, color = SettingsNavy) }
         item {
-            Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = Color.White), modifier = Modifier.fillMaxWidth()) {
+            Card(
+                shape = RoundedCornerShape(18.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                modifier = Modifier.fillMaxWidth().clickable { page = "Profile" }
+            ) {
                 Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Surface(color = Color(0xFFEDE5FF), shape = CircleShape, modifier = Modifier.size(48.dp)) {
-                        Box(contentAlignment = Alignment.Center) { Text("A", color = SettingsPurple, fontWeight = FontWeight.Bold, fontSize = 20.sp) }
-                    }
+                    ProfileAvatar(currentName, currentImage, 58)
                     Spacer(Modifier.width(14.dp))
-                    Column {
-                        Text("Akash", fontWeight = FontWeight.Bold, color = SettingsNavy)
-                        Text("Local Smaran profile", color = SettingsMuted, fontSize = 12.sp)
+                    Column(Modifier.weight(1f)) {
+                        Text(currentName.ifBlank { "Your name" }, fontWeight = FontWeight.Bold, color = SettingsNavy, fontSize = 17.sp)
+                        Text(currentEmail.ifBlank { "Add your email" }, color = SettingsMuted, fontSize = 12.sp)
                     }
+                    Icon(Icons.Default.ChevronRight, "Edit profile", tint = SettingsMuted)
                 }
             }
         }
@@ -94,8 +123,35 @@ fun Settings(context: Context) {
 }
 
 @Composable
+private fun ProfileAvatar(name: String, imageUri: String, size: Int) {
+    Box(
+        modifier = Modifier.size(size.dp).clip(CircleShape).background(Color(0xFFEDE5FF)),
+        contentAlignment = Alignment.Center
+    ) {
+        if (imageUri.isNotBlank()) {
+            AsyncImage(
+                model = imageUri,
+                contentDescription = "Profile picture",
+                modifier = Modifier.fillMaxSize().clip(CircleShape),
+                contentScale = ContentScale.Crop
+            )
+        } else {
+            Text(
+                name.trim().firstOrNull()?.uppercase() ?: "A",
+                color = SettingsPurple,
+                fontWeight = FontWeight.Bold,
+                fontSize = (size / 2.5f).sp
+            )
+        }
+    }
+}
+
+@Composable
 private fun SettingsItem(entry: SettingsEntry, onClick: () -> Unit) {
-    Row(Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(
+        Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 15.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
         Icon(entry.icon, entry.title, tint = SettingsMuted, modifier = Modifier.size(24.dp))
         Spacer(Modifier.width(14.dp))
         Column(Modifier.weight(1f)) {
@@ -103,6 +159,68 @@ private fun SettingsItem(entry: SettingsEntry, onClick: () -> Unit) {
             Text(entry.subtitle, color = SettingsMuted, fontSize = 11.sp)
         }
         Icon(Icons.Default.ChevronRight, "Open ${entry.title}", tint = SettingsMuted)
+    }
+}
+
+@Composable
+private fun ProfileEditor(profile: ProfilePreferences, onSaved: () -> Unit, onBack: () -> Unit) {
+    var name by rememberSaveable { mutableStateOf(profile.name) }
+    var email by rememberSaveable { mutableStateOf(profile.email) }
+    var age by rememberSaveable { mutableStateOf(profile.age) }
+    var imageUri by rememberSaveable { mutableStateOf(profile.profileImageUri) }
+
+    val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        if (uri != null) imageUri = uri.toString()
+    }
+
+    LazyColumn(
+        Modifier.fillMaxSize().padding(horizontal = 20.dp),
+        contentPadding = PaddingValues(18.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
+    ) {
+        item {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Back") }
+                Text("Profile", fontSize = 25.sp, fontWeight = FontWeight.Bold, color = SettingsNavy)
+            }
+        }
+        item {
+            Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = Color.White), modifier = Modifier.fillMaxWidth()) {
+                Column(Modifier.fillMaxWidth().padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    ProfileAvatar(name, imageUri, 96)
+                    Spacer(Modifier.height(10.dp))
+                    OutlinedButton(onClick = { imagePicker.launch("image/*") }) {
+                        Icon(Icons.Default.PhotoCamera, null)
+                        Spacer(Modifier.width(8.dp))
+                        Text("Change profile picture")
+                    }
+                    Text("Only stored locally on this device", color = SettingsMuted, fontSize = 11.sp)
+                }
+            }
+        }
+        item {
+            Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = Color.White), modifier = Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    OutlinedTextField(name, { name = it }, Modifier.fillMaxWidth(), singleLine = true, label = { Text("Name") }, leadingIcon = { Icon(Icons.Default.Person, null) })
+                    OutlinedTextField(email, { email = it }, Modifier.fillMaxWidth(), singleLine = true, label = { Text("Email") }, leadingIcon = { Icon(Icons.Default.Email, null) })
+                    OutlinedTextField(age, { value -> if (value.all { it.isDigit() } && value.length <= 3) age = value }, Modifier.fillMaxWidth(), singleLine = true, label = { Text("Age") }, leadingIcon = { Icon(Icons.Default.Cake, null) })
+                }
+            }
+        }
+        item {
+            Button(
+                onClick = {
+                    profile.name = name.trim().ifBlank { "Akash" }
+                    profile.email = email.trim()
+                    profile.age = age.trim()
+                    profile.profileImageUri = imageUri
+                    onSaved()
+                },
+                modifier = Modifier.fillMaxWidth().height(52.dp),
+                shape = RoundedCornerShape(14.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = SettingsPurple)
+            ) { Text("Save Profile", fontWeight = FontWeight.Bold) }
+        }
     }
 }
 
@@ -132,12 +250,11 @@ private fun SettingsDetailPage(title: String, state: SettingsUiState, manager: S
                         "Appearance" -> {
                             SettingSwitch("Dark mode", "Save your preferred dark appearance", Icons.Default.DarkMode, state.darkMode) { manager.setDarkMode(it); refresh() }
                             SettingSwitch("Dynamic color", "Use Android dynamic colors when supported", Icons.Default.Palette, state.dynamicColor) { manager.setDynamicColor(it); refresh() }
-                            Text("The preference is stored locally and ready for theme integration.", color = SettingsMuted, fontSize = 12.sp)
                         }
                         "Backup & Restore" -> InfoBlock(Icons.Default.Backup, "Backup & Restore", "Backup controls can be added here without changing the current task store.")
                         "Data & Storage" -> InfoBlock(Icons.Default.Storage, "Data & Storage", "Your current task data remains stored locally on this device.")
                         "Notifications" -> InfoBlock(Icons.Default.Notifications, "Notifications", "Notification behavior is kept separate from task scheduling.")
-                        "Privacy" -> InfoBlock(Icons.Default.PrivacyTip, "Privacy", "Smaran is designed around local task data and local reminder scheduling.")
+                        "Privacy" -> InfoBlock(Icons.Default.Lock, "Privacy", "Your profile and task information are stored locally on this device.")
                         "About Smaran" -> InfoBlock(Icons.Default.Info, "About Smaran", "Smaran — Remember. Plan. Achieve.")
                     }
                 }
@@ -149,7 +266,7 @@ private fun SettingsDetailPage(title: String, state: SettingsUiState, manager: S
 @Composable
 private fun SettingSwitch(title: String, subtitle: String, icon: ImageVector, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
     Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-        Icon(icon, title, tint = SettingsPurple)
+        Icon(icon, title, tint = SettingsPurple, modifier = Modifier.size(24.dp))
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) { Text(title, fontWeight = FontWeight.SemiBold, color = SettingsNavy); Text(subtitle, color = SettingsMuted, fontSize = 11.sp) }
         Switch(checked = checked, onCheckedChange = onCheckedChange)
@@ -159,7 +276,7 @@ private fun SettingSwitch(title: String, subtitle: String, icon: ImageVector, ch
 @Composable
 private fun SettingAction(title: String, subtitle: String, icon: ImageVector, onClick: () -> Unit) {
     Row(Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-        Icon(icon, title, tint = SettingsPurple)
+        Icon(icon, title, tint = SettingsPurple, modifier = Modifier.size(24.dp))
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) { Text(title, fontWeight = FontWeight.SemiBold, color = SettingsNavy); Text(subtitle, color = SettingsMuted, fontSize = 11.sp) }
         Icon(Icons.Default.ChevronRight, "Open", tint = SettingsMuted)
@@ -169,7 +286,7 @@ private fun SettingAction(title: String, subtitle: String, icon: ImageVector, on
 @Composable
 private fun SettingChoice(title: String, selected: Boolean, onClick: () -> Unit) {
     Row(Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 9.dp), verticalAlignment = Alignment.CenterVertically) {
-        Icon(if (selected) Icons.Default.RadioButtonChecked else Icons.Default.RadioButtonUnchecked, title, tint = if (selected) SettingsPurple else SettingsMuted)
+        Icon(if (selected) Icons.Default.RadioButtonChecked else Icons.Default.RadioButtonUnchecked, title, tint = if (selected) SettingsPurple else SettingsMuted, modifier = Modifier.size(22.dp))
         Spacer(Modifier.width(10.dp))
         Text(title, color = SettingsNavy)
     }

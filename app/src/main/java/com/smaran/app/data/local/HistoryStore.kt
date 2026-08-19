@@ -20,8 +20,8 @@ class HistoryStore(context: Context) {
                     taskId = o.getLong("taskId"),
                     action = runCatching { HistoryAction.valueOf(o.getString("action")) }.getOrDefault(HistoryAction.CREATED),
                     timestamp = LocalDateTime.parse(o.getString("timestamp")),
-                    previousDateTime = o.optString("previousDateTime").takeIf { it.isNotBlank() }?.let(LocalDateTime::parse),
-                    newDateTime = o.optString("newDateTime").takeIf { it.isNotBlank() }?.let(LocalDateTime::parse)
+                    previousDateTime = o.optString("previousDateTime").takeIf { it.isNotBlank() }?.let { LocalDateTime.parse(it) },
+                    newDateTime = o.optString("newDateTime").takeIf { it.isNotBlank() }?.let { LocalDateTime.parse(it) }
                 ))
             }
         }.sortedByDescending { it.timestamp }

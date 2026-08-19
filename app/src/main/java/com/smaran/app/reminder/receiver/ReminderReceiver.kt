@@ -25,13 +25,28 @@ class ReminderReceiver : BroadcastReceiver() {
         val scheduler = ReminderScheduler(context)
         when (intent.action) {
             ACTION_COMPLETE -> {
-                store.update(task.copy(completed = true)); scheduler.cancel(taskId); history.record(taskId, HistoryAction.COMPLETED); notifyManager(context).cancel(taskId.hashCode())
+                store.update(task.copy(completed = true))
+                scheduler.cancel(taskId)
+                history.record(taskId, HistoryAction.COMPLETED)
+                if (task.recurring) {
+                    val next = task.copy(id = System.currentTimeMillis(), date = task.date.plusDays(1), completed = false)
+                    store.add(next)
+                    scheduler.schedule(next.id, next.title, next.date.atTime(next.time))
+                    history.record(next.id, HistoryAction.CREATED, next = next.date.atTime(next.time))
+                }
+                notifyManager(context).cancel(taskId.hashCode())
             }
             ACTION_SNOOZE -> {
-                val minutes = intent.getIntExtra(EXTRA_MINUTES, 15); val next = LocalDateTime.now().plusMinutes(minutes.toLong())
-                scheduler.schedule(taskId, task.title, next); history.record(taskId, HistoryAction.SNOOZED, task.date.atTime(task.time), next); showNotification(context, taskId, task.title, minutes)
+                val minutes = intent.getIntExtra(EXTRA_MINUTES, 15)
+                val next = LocalDateTime.now().plusMinutes(minutes.toLong())
+                scheduler.schedule(taskId, task.title, next)
+                history.record(taskId, HistoryAction.SNOOZED, task.date.atTime(task.time), next)
+                showNotification(context, taskId, task.title, minutes)
             }
-            ACTION_FIRE -> { history.record(taskId, HistoryAction.REMINDER_TRIGGERED); showNotification(context, taskId, task.title, null) }
+            ACTION_FIRE -> {
+                history.record(taskId, HistoryAction.REMINDER_TRIGGERED)
+                showNotification(context, taskId, task.title, null)
+            }
         }
     }
 

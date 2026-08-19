@@ -1,8 +1,11 @@
 package com.smaran.app.settings
 
 import android.content.Context
+import android.graphics.BitmapFactory
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -17,17 +20,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.foundation.Image
-import androidx.compose.ui.res.painterResource
-import androidx.compose.foundation.background
-import coil.compose.AsyncImage
 import com.smaran.app.profile.ProfilePreferences
 import com.smaran.app.reminder.AlarmPermissionHelper
 
@@ -35,11 +35,7 @@ private val SettingsPurple = Color(0xFF5B2BD9)
 private val SettingsMuted = Color(0xFF747384)
 private val SettingsNavy = Color(0xFF151733)
 
-private data class SettingsEntry(
-    val title: String,
-    val subtitle: String,
-    val icon: ImageVector
-)
+private data class SettingsEntry(val title: String, val subtitle: String, val icon: ImageVector)
 
 @Composable
 fun Settings(context: Context) {
@@ -51,29 +47,18 @@ fun Settings(context: Context) {
 
     if (page != null) {
         if (page == "Profile") {
-            ProfileEditor(
-                profile = profile,
-                onSaved = { profileVersion++; page = null },
-                onBack = { page = null }
-            )
+            ProfileEditor(profile, { profileVersion++; page = null }, { page = null })
         } else {
-            SettingsDetailPage(
-                title = page!!,
-                state = state,
-                manager = manager,
-                context = context,
-                refresh = { state = manager.read() },
-                onBack = { page = null }
-            )
+            SettingsDetailPage(page!!, state, manager, context, { state = manager.read() }, { page = null })
         }
         return
     }
 
-    // Read the current profile on every recomposition triggered by profileVersion.
+    // Touching profileVersion forces the card to read the latest saved profile values.
     val currentName = profile.name
     val currentEmail = profile.email
     val currentImage = profile.profileImageUri
-    @Suppress("UNUSED_VARIABLE") val profileRefresh = profileVersion
+    @Suppress("UNUSED_VARIABLE") val version = profileVersion
 
     val entries = listOf(
         SettingsEntry("General", "Basic app preferences", Icons.Default.Tune),
@@ -86,18 +71,10 @@ fun Settings(context: Context) {
         SettingsEntry("About Smaran", "Version and project information", Icons.Default.Info)
     )
 
-    LazyColumn(
-        modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp),
-        contentPadding = PaddingValues(18.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
+    LazyColumn(Modifier.fillMaxSize().padding(horizontal = 20.dp), contentPadding = PaddingValues(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item { Text("Settings", fontSize = 27.sp, fontWeight = FontWeight.Bold, color = SettingsNavy) }
         item {
-            Card(
-                shape = RoundedCornerShape(18.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                modifier = Modifier.fillMaxWidth().clickable { page = "Profile" }
-            ) {
+            Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = Color.White), modifier = Modifier.fillMaxWidth().clickable { page = "Profile" }) {
                 Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                     ProfileAvatar(currentName, currentImage, 58)
                     Spacer(Modifier.width(14.dp))
@@ -124,34 +101,24 @@ fun Settings(context: Context) {
 
 @Composable
 private fun ProfileAvatar(name: String, imageUri: String, size: Int) {
-    Box(
-        modifier = Modifier.size(size.dp).clip(CircleShape).background(Color(0xFFEDE5FF)),
-        contentAlignment = Alignment.Center
-    ) {
-        if (imageUri.isNotBlank()) {
-            AsyncImage(
-                model = imageUri,
-                contentDescription = "Profile picture",
-                modifier = Modifier.fillMaxSize().clip(CircleShape),
-                contentScale = ContentScale.Crop
-            )
+    val context = LocalContext.current
+    val bitmap = remember(imageUri) {
+        if (imageUri.isBlank()) null else runCatching {
+            context.contentResolver.openInputStream(android.net.Uri.parse(imageUri))?.use { BitmapFactory.decodeStream(it) }
+        }.getOrNull()
+    }
+    Box(Modifier.size(size.dp).clip(CircleShape).background(Color(0xFFEDE5FF)), contentAlignment = Alignment.Center) {
+        if (bitmap != null) {
+            Image(bitmap.asImageBitmap(), "Profile picture", Modifier.fillMaxSize().clip(CircleShape), contentScale = ContentScale.Crop)
         } else {
-            Text(
-                name.trim().firstOrNull()?.uppercase() ?: "A",
-                color = SettingsPurple,
-                fontWeight = FontWeight.Bold,
-                fontSize = (size / 2.5f).sp
-            )
+            Text(name.trim().firstOrNull()?.uppercase() ?: "A", color = SettingsPurple, fontWeight = FontWeight.Bold, fontSize = (size / 2.5f).sp)
         }
     }
 }
 
 @Composable
 private fun SettingsItem(entry: SettingsEntry, onClick: () -> Unit) {
-    Row(
-        Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 15.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
+    Row(Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 15.dp), verticalAlignment = Alignment.CenterVertically) {
         Icon(entry.icon, entry.title, tint = SettingsMuted, modifier = Modifier.size(24.dp))
         Spacer(Modifier.width(14.dp))
         Column(Modifier.weight(1f)) {
@@ -168,16 +135,9 @@ private fun ProfileEditor(profile: ProfilePreferences, onSaved: () -> Unit, onBa
     var email by rememberSaveable { mutableStateOf(profile.email) }
     var age by rememberSaveable { mutableStateOf(profile.age) }
     var imageUri by rememberSaveable { mutableStateOf(profile.profileImageUri) }
+    val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri -> if (uri != null) imageUri = uri.toString() }
 
-    val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-        if (uri != null) imageUri = uri.toString()
-    }
-
-    LazyColumn(
-        Modifier.fillMaxSize().padding(horizontal = 20.dp),
-        contentPadding = PaddingValues(18.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
-    ) {
+    LazyColumn(Modifier.fillMaxSize().padding(horizontal = 20.dp), contentPadding = PaddingValues(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         item {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Back") }
@@ -208,18 +168,15 @@ private fun ProfileEditor(profile: ProfilePreferences, onSaved: () -> Unit, onBa
             }
         }
         item {
-            Button(
-                onClick = {
-                    profile.name = name.trim().ifBlank { "Akash" }
-                    profile.email = email.trim()
-                    profile.age = age.trim()
-                    profile.profileImageUri = imageUri
-                    onSaved()
-                },
-                modifier = Modifier.fillMaxWidth().height(52.dp),
-                shape = RoundedCornerShape(14.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = SettingsPurple)
-            ) { Text("Save Profile", fontWeight = FontWeight.Bold) }
+            Button(onClick = {
+                profile.name = name.trim().ifBlank { "Akash" }
+                profile.email = email.trim()
+                profile.age = age.trim()
+                profile.profileImageUri = imageUri
+                onSaved()
+            }, modifier = Modifier.fillMaxWidth().height(52.dp), shape = RoundedCornerShape(14.dp), colors = ButtonDefaults.buttonColors(containerColor = SettingsPurple)) {
+                Text("Save Profile", fontWeight = FontWeight.Bold)
+            }
         }
     }
 }
@@ -227,12 +184,7 @@ private fun ProfileEditor(profile: ProfilePreferences, onSaved: () -> Unit, onBa
 @Composable
 private fun SettingsDetailPage(title: String, state: SettingsUiState, manager: SettingsManager, context: Context, refresh: () -> Unit, onBack: () -> Unit) {
     LazyColumn(Modifier.fillMaxSize().padding(horizontal = 20.dp), contentPadding = PaddingValues(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        item {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Back") }
-                Text(title, fontSize = 25.sp, fontWeight = FontWeight.Bold, color = SettingsNavy)
-            }
-        }
+        item { Row(verticalAlignment = Alignment.CenterVertically) { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Back") }; Text(title, fontSize = 25.sp, fontWeight = FontWeight.Bold, color = SettingsNavy) } }
         item {
             Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = Color.White), modifier = Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -243,9 +195,7 @@ private fun SettingsDetailPage(title: String, state: SettingsUiState, manager: S
                             SettingSwitch("Vibration", "Vibrate for reminder notifications", Icons.Default.Vibration, state.vibrationEnabled) { manager.setVibrationEnabled(it); refresh() }
                             SettingAction("Exact alarm permission", "Allow reliable scheduled reminders", Icons.Default.Alarm) { AlarmPermissionHelper.openExactAlarmSettings(context) }
                             Text("Quick snooze", fontWeight = FontWeight.Bold, color = SettingsNavy, modifier = Modifier.padding(top = 8.dp))
-                            SettingsScreenModel.snoozeOptions().forEach { minutes ->
-                                SettingChoice(SettingsScreenModel.snoozeLabel(minutes), minutes == state.defaultSnoozeMinutes) { manager.setDefaultSnoozeMinutes(minutes); refresh() }
-                            }
+                            SettingsScreenModel.snoozeOptions().forEach { minutes -> SettingChoice(SettingsScreenModel.snoozeLabel(minutes), minutes == state.defaultSnoozeMinutes) { manager.setDefaultSnoozeMinutes(minutes); refresh() } }
                         }
                         "Appearance" -> {
                             SettingSwitch("Dark mode", "Save your preferred dark appearance", Icons.Default.DarkMode, state.darkMode) { manager.setDarkMode(it); refresh() }

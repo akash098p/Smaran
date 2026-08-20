@@ -1323,13 +1323,13 @@ private fun TaskTaskCard(task: Task, onEdit: (Task) -> Unit, onComplete: (Task) 
 @Composable private fun TaskEditorPhase3(existing: Task?, initialDate: LocalDate = LocalDate.now(), onDismiss: () -> Unit, onSave: (Task) -> Unit) {
     val context = LocalContext.current; var title by remember(existing) { mutableStateOf(existing?.title ?: "") }; var description by remember(existing) { mutableStateOf(existing?.description ?: "") }; var date by remember(existing) { mutableStateOf(existing?.date ?: initialDate) }; var time by remember(existing) { mutableStateOf(existing?.time ?: LocalTime.now().plusHours(1).withMinute(0)) }; var category by remember(existing) { mutableStateOf(existing?.category ?: "Personal") }; var priority by remember(existing) { mutableStateOf(existing?.priority ?: Priority.MEDIUM) }; var recurring by remember(existing) { mutableStateOf(existing?.recurring ?: false) }
     AlertDialog(onDismissRequest = onDismiss, title = { Text(if(existing == null) "Create Task" else "Edit / Reschedule") }, text = { Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        OutlinedTextField(title, { title = it }, Modifier.fillMaxWidth(), singleLine = true, label = { Text("Task title") }); OutlinedTextField(description, { description = it }, Modifier.fillMaxWidth(), label = { Text("Description") })
+        OutlinedTextField(title, { title = it }, Modifier.fillMaxWidth(), singleLine = true, label = { Text("Task title") }); OutlinedTextField(description, { description = it }, Modifier.fillMaxWidth(), label = { Text("Description (optional)") })
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) { OutlinedButton({ DatePickerDialog(context, { _, y, m, d -> date = LocalDate.of(y, m + 1, d) }, date.year, date.monthValue - 1, date.dayOfMonth).show() }, Modifier.weight(1f)) { Text(date.toString()) }; OutlinedButton({ TimePickerDialog(context, { _, h, m -> time = LocalTime.of(h, m) }, time.hour, time.minute, true).show() }, Modifier.weight(1f)) { Text(time.format(DateTimeFormatter.ofPattern("hh:mm a"))) } }
         Text("Category", color = Muted, fontSize = 11.sp)
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                CategoryChip("Personal", category == "Personal", CategoryPersonal) { category = "Personal" }
-                CategoryChip("Work", category == "Work", CategoryWork) { category = "Work" }
+                CategoryChip("Personal", category == "Personal", CategoryPersonal, modifier = Modifier.weight(1f)) { category = "Personal" }
+                CategoryChip("Work", category == "Work", CategoryWork, modifier = Modifier.weight(1f)) { category = "Work" }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                 CategoryChip("Study", category == "Study", CategoryStudy, modifier = Modifier.weight(1f)) { category = "Study" }

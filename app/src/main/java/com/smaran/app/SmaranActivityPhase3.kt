@@ -12,6 +12,10 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Canvas
@@ -41,6 +45,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.TextStyle
@@ -254,18 +259,7 @@ private fun delete(task: Task, store: TaskStore, scheduler: ReminderScheduler, h
                 }
             }
         }
-        item {
-            Card(
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary),
-                shape = RoundedCornerShape(18.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("The secret of getting ahead is getting started.", color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, lineHeight = 22.sp)
-                    Text("Mark Twain", color = MaterialTheme.colorScheme.onPrimary.copy(.75f), fontSize = 12.sp)
-                }
-            }
-        }
+        item { HomeFeatureCarousel() }
         item {
             Card(
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -305,6 +299,114 @@ private fun delete(task: Task, store: TaskStore, scheduler: ReminderScheduler, h
         }
         if (list.isEmpty()) item { Text("No tasks today. Tap + to create a reminder.", color = MaterialTheme.colorScheme.onSurfaceVariant) }
         items(list) { TaskRowPhase3(it, if (!it.completed) onComplete else null, null, null) }
+    }
+}
+
+private data class HomeFeatureSlide(
+    val image: Int,
+    val title: String,
+    val body: String
+)
+
+private val homeFeatureSlides = listOf(
+    HomeFeatureSlide(
+        R.drawable.carousel_focus,
+        "Welcome to Smaran",
+        "Your intelligent reminder companion."
+    ),
+    HomeFeatureSlide(
+        R.drawable.carousel_planning,
+        "Plan Your Tasks",
+        "Create tasks with date and time so nothing slips through."
+    ),
+    HomeFeatureSlide(
+        R.drawable.carousel_reminders,
+        "Smart Reminders",
+        "Snooze or reschedule with quick reminder actions."
+    ),
+    HomeFeatureSlide(
+        R.drawable.carousel_progress,
+        "Track & Improve",
+        "See your history, streaks and progress over time."
+    ),
+    HomeFeatureSlide(
+        R.drawable.carousel_achievement,
+        "Let's Achieve More",
+        "Stay focused, stay productive and achieve your goals."
+    )
+)
+
+@Composable
+private fun HomeFeatureCarousel() {
+    var slideIndex by rememberSaveable { mutableIntStateOf(0) }
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            kotlinx.coroutines.delay(3_000L)
+            slideIndex = (slideIndex + 1) % homeFeatureSlides.size
+        }
+    }
+
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        Card(
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary),
+            shape = RoundedCornerShape(20.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+        ) {
+            AnimatedContent(
+                targetState = homeFeatureSlides[slideIndex],
+                transitionSpec = {
+                    slideInHorizontally { width -> width } togetherWith
+                        slideOutHorizontally { width -> -width }
+                },
+                label = "home_feature_slide"
+            ) { slide ->
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(230.dp)
+                        .padding(horizontal = 14.dp, vertical = 3.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Image(
+                        painter = painterResource(slide.image),
+                        contentDescription = slide.title,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(170.dp),
+                        contentScale = ContentScale.Fit
+                    )
+                    Text(
+                        text = slide.title,
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        fontSize = 17.sp,
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(Modifier.height(2.dp))
+                    Text(
+                        text = slide.body,
+                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.82f),
+                        fontSize = 11.sp,
+                        lineHeight = 15.sp,
+                        textAlign = TextAlign.Center,
+                        maxLines = 2
+                    )
+                    Spacer(Modifier.height(2.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        homeFeatureSlides.indices.forEach { index ->
+                            Box(
+                                Modifier
+                                    .size(if (index == slideIndex) 7.dp else 5.dp)
+                                    .clip(CircleShape)
+                                    .background(if (index == slideIndex) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.30f))
+                            )
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 

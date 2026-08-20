@@ -40,13 +40,17 @@ private val SettingsNavy = Color(0xFF151733)
 private data class SettingsEntry(val title: String, val subtitle: String, val icon: ImageVector)
 
 @Composable
-fun Settings(context: Context, profileEditRequest: Int = 0, onSettingsChanged: () -> Unit = {}) {
+fun Settings(context: Context, profileEditRequest: Int = 0, notificationsRequest: Int = 0, onSettingsChanged: () -> Unit = {}) {
+    val colorScheme = MaterialTheme.colorScheme
     val manager = remember { SettingsManager(context) }
     val profile = remember { ProfilePreferences(context) }
     var state by remember { mutableStateOf(manager.read()) }
     var page by rememberSaveable { mutableStateOf<String?>(null) }
     LaunchedEffect(profileEditRequest) {
         if (profileEditRequest > 0) page = "Profile"
+    }
+    LaunchedEffect(notificationsRequest) {
+        if (notificationsRequest > 0) page = "Notifications"
     }
     var profileVersion by remember { mutableIntStateOf(0) }
 
@@ -78,26 +82,26 @@ fun Settings(context: Context, profileEditRequest: Int = 0, onSettingsChanged: (
     )
 
     LazyColumn(Modifier.fillMaxSize().padding(horizontal = 20.dp), contentPadding = PaddingValues(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        item { Text("Settings", fontSize = 27.sp, fontWeight = FontWeight.Bold, color = SettingsNavy) }
+        item { Text("Settings", fontSize = 27.sp, fontWeight = FontWeight.Bold, color = colorScheme.onBackground) }
         item {
-            Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = Color.White), modifier = Modifier.fillMaxWidth().clickable { page = "Profile" }) {
+            Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = colorScheme.surface), modifier = Modifier.fillMaxWidth().clickable { page = "Profile" }) {
                 Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                     ProfileAvatar(currentName, currentImage, 58)
                     Spacer(Modifier.width(14.dp))
                     Column(Modifier.weight(1f)) {
-                        Text(currentName.ifBlank { "Your name" }, fontWeight = FontWeight.Bold, color = SettingsNavy, fontSize = 17.sp)
-                        Text(currentEmail.ifBlank { "Add your email" }, color = SettingsMuted, fontSize = 12.sp)
+                        Text(currentName.ifBlank { "Your name" }, fontWeight = FontWeight.Bold, color = colorScheme.onSurface, fontSize = 17.sp)
+                        Text(currentEmail.ifBlank { "Add your email" }, color = colorScheme.onSurfaceVariant, fontSize = 12.sp)
                     }
-                    Icon(Icons.Default.ChevronRight, "Edit profile", tint = SettingsMuted)
+                    Icon(Icons.Default.ChevronRight, "Edit profile", tint = colorScheme.onSurfaceVariant)
                 }
             }
         }
         item {
-            Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = Color.White), modifier = Modifier.fillMaxWidth()) {
+            Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = colorScheme.surface), modifier = Modifier.fillMaxWidth()) {
                 Column {
                     entries.forEachIndexed { index, entry ->
                         SettingsItem(entry) { page = entry.title }
-                        if (index != entries.lastIndex) HorizontalDivider(modifier = Modifier.padding(start = 54.dp), color = Color(0xFFF0EEF4))
+                        if (index != entries.lastIndex) HorizontalDivider(modifier = Modifier.padding(start = 54.dp), color = colorScheme.outlineVariant)
                     }
                 }
             }
@@ -108,12 +112,13 @@ fun Settings(context: Context, profileEditRequest: Int = 0, onSettingsChanged: (
 @Composable
 private fun ProfileAvatar(name: String, imageUri: String, size: Int) {
     val context = LocalContext.current
+    val colorScheme = MaterialTheme.colorScheme
     val bitmap = remember(imageUri) {
         if (imageUri.isBlank()) null else runCatching {
             context.contentResolver.openInputStream(android.net.Uri.parse(imageUri))?.use { BitmapFactory.decodeStream(it) }
         }.getOrNull()
     }
-    Box(Modifier.size(size.dp).clip(CircleShape).background(Color(0xFFEDE5FF)), contentAlignment = Alignment.Center) {
+    Box(Modifier.size(size.dp).clip(CircleShape).background(colorScheme.primary.copy(alpha = 0.14f)), contentAlignment = Alignment.Center) {
         if (bitmap != null) {
             Image(bitmap.asImageBitmap(), "Profile picture", Modifier.fillMaxSize().clip(CircleShape), contentScale = ContentScale.Crop)
         } else {
@@ -124,24 +129,26 @@ private fun ProfileAvatar(name: String, imageUri: String, size: Int) {
 
 @Composable
 private fun SettingsItem(entry: SettingsEntry, onClick: () -> Unit) {
+    val colorScheme = MaterialTheme.colorScheme
     Row(Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 15.dp), verticalAlignment = Alignment.CenterVertically) {
-        Surface(modifier = Modifier.size(40.dp), shape = RoundedCornerShape(12.dp), color = Color(0xFFF1EDFF)) {
+        Surface(modifier = Modifier.size(40.dp), shape = RoundedCornerShape(12.dp), color = colorScheme.primary.copy(alpha = 0.12f)) {
             Box(contentAlignment = Alignment.Center) {
                 Icon(entry.icon, entry.title, tint = SettingsPurple, modifier = Modifier.size(21.dp))
             }
         }
         Spacer(Modifier.width(14.dp))
         Column(Modifier.weight(1f)) {
-            Text(entry.title, fontSize = 16.sp, fontWeight = FontWeight.Medium, color = SettingsNavy)
-            Text(entry.subtitle, color = SettingsMuted, fontSize = 11.sp)
+            Text(entry.title, fontSize = 16.sp, fontWeight = FontWeight.Medium, color = colorScheme.onSurface)
+            Text(entry.subtitle, color = colorScheme.onSurfaceVariant, fontSize = 11.sp)
         }
-        Icon(Icons.Default.ChevronRight, "Open ${entry.title}", tint = SettingsMuted)
+        Icon(Icons.Default.ChevronRight, "Open ${entry.title}", tint = colorScheme.onSurfaceVariant)
     }
 }
 
 @Composable
 private fun ProfileEditor(profile: ProfilePreferences, onSaved: () -> Unit, onBack: () -> Unit) {
     val context = LocalContext.current
+    val colorScheme = MaterialTheme.colorScheme
     var name by rememberSaveable { mutableStateOf(profile.name) }
     var email by rememberSaveable { mutableStateOf(profile.email) }
     var age by rememberSaveable { mutableStateOf(profile.age) }
@@ -154,19 +161,19 @@ private fun ProfileEditor(profile: ProfilePreferences, onSaved: () -> Unit, onBa
     }
 
     LazyColumn(Modifier.fillMaxSize().padding(horizontal = 20.dp), contentPadding = PaddingValues(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        item { Row(verticalAlignment = Alignment.CenterVertically) { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Back") }; Text("Profile", fontSize = 25.sp, fontWeight = FontWeight.Bold, color = SettingsNavy) } }
+        item { Row(verticalAlignment = Alignment.CenterVertically) { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Back", tint = colorScheme.onSurface) }; Text("Profile", fontSize = 25.sp, fontWeight = FontWeight.Bold, color = colorScheme.onSurface) } }
         item {
-            Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = Color.White), modifier = Modifier.fillMaxWidth()) {
+            Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = colorScheme.surface), modifier = Modifier.fillMaxWidth()) {
                 Column(Modifier.fillMaxWidth().padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     ProfileAvatar(name, imageUri, 96)
                     Spacer(Modifier.height(10.dp))
                     OutlinedButton(onClick = { imagePicker.launch("image/*") }) { Icon(Icons.Default.PhotoCamera, null); Spacer(Modifier.width(8.dp)); Text("Change profile picture") }
-                    Text("Only stored locally on this device", color = SettingsMuted, fontSize = 11.sp)
+                    Text("Only stored locally on this device", color = colorScheme.onSurfaceVariant, fontSize = 11.sp)
                 }
             }
         }
         item {
-            Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = Color.White), modifier = Modifier.fillMaxWidth()) {
+            Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = colorScheme.surface), modifier = Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     OutlinedTextField(name, { name = it }, Modifier.fillMaxWidth(), singleLine = true, label = { Text("Name") }, leadingIcon = { Icon(Icons.Default.Person, null) })
                     OutlinedTextField(email, { email = it }, Modifier.fillMaxWidth(), singleLine = true, label = { Text("Email") }, leadingIcon = { Icon(Icons.Default.Email, null) })
@@ -188,17 +195,18 @@ private fun ProfileEditor(profile: ProfilePreferences, onSaved: () -> Unit, onBa
 
 @Composable
 private fun SettingsDetailPage(title: String, state: SettingsUiState, manager: SettingsManager, context: Context, refresh: () -> Unit, onBack: () -> Unit) {
+    val colorScheme = MaterialTheme.colorScheme
     LazyColumn(Modifier.fillMaxSize().padding(horizontal = 20.dp), contentPadding = PaddingValues(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        item { Row(verticalAlignment = Alignment.CenterVertically) { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Back") }; Text(title, fontSize = 25.sp, fontWeight = FontWeight.Bold, color = SettingsNavy) } }
+        item { Row(verticalAlignment = Alignment.CenterVertically) { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Back", tint = colorScheme.onSurface) }; Text(title, fontSize = 25.sp, fontWeight = FontWeight.Bold, color = colorScheme.onSurface) } }
         item {
-            Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = Color.White), modifier = Modifier.fillMaxWidth()) {
+            Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = colorScheme.surface), modifier = Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     when (title) {
                         "Reminders" -> {
                             SettingSwitch("Reminder sound", "Play sound with reminder notifications", Icons.Default.VolumeUp, state.soundEnabled) { manager.setSoundEnabled(it); refresh() }
                             SettingSwitch("Vibration", "Vibrate for reminder notifications", Icons.Default.Vibration, state.vibrationEnabled) { manager.setVibrationEnabled(it); refresh() }
                             SettingAction("Exact alarm permission", "Allow reliable scheduled reminders", Icons.Default.Alarm, context) { AlarmPermissionHelper.openExactAlarmSettings(context) }
-                            Text("Quick snooze", fontWeight = FontWeight.Bold, color = SettingsNavy, modifier = Modifier.padding(top = 8.dp))
+                            Text("Quick snooze", fontWeight = FontWeight.Bold, color = colorScheme.onSurface, modifier = Modifier.padding(top = 8.dp))
                             SettingsScreenModel.snoozeOptions().forEach { minutes -> SettingChoice(SettingsScreenModel.snoozeLabel(minutes), minutes == state.defaultSnoozeMinutes) { manager.setDefaultSnoozeMinutes(minutes); refresh() } }
                         }
                         "Appearance" -> {
@@ -207,24 +215,35 @@ private fun SettingsDetailPage(title: String, state: SettingsUiState, manager: S
                         }
                         "Backup & Restore" -> InfoBlock(Icons.Default.Backup, "Backup & Restore", "Backup controls can be added here without changing the current task store.")
                         "Data & Storage" -> InfoBlock(Icons.Default.Storage, "Data & Storage", "Your current task data remains stored locally on this device.")
-                        "Notifications" -> InfoBlock(Icons.Default.Notifications, "Notifications", "Notification behavior is kept separate from task scheduling.")
+                        "Notifications" -> {
+                            SettingSwitch("Reminder sound", "Play sound with reminder notifications", Icons.Default.VolumeUp, state.soundEnabled) { manager.setSoundEnabled(it); refresh() }
+                            SettingSwitch("Vibration", "Vibrate for reminder notifications", Icons.Default.Vibration, state.vibrationEnabled) { manager.setVibrationEnabled(it); refresh() }
+                            SettingAction("Exact alarm permission", "Allow reliable scheduled reminders", Icons.Default.Alarm, context) { AlarmPermissionHelper.openExactAlarmSettings(context) }
+                            Text("Default snooze", fontWeight = FontWeight.Bold, color = colorScheme.onSurface, modifier = Modifier.padding(top = 8.dp))
+                            SettingsScreenModel.snoozeOptions().forEach { minutes ->
+                                SettingChoice(SettingsScreenModel.snoozeLabel(minutes), minutes == state.defaultSnoozeMinutes) {
+                                    manager.setDefaultSnoozeMinutes(minutes)
+                                    refresh()
+                                }
+                            }
+                        }
                         "Privacy" -> InfoBlock(Icons.Default.Lock, "Privacy", "Your profile and task information are stored locally on this device.")
                         "About Smaran" -> {
                             InfoBlock(Icons.Default.Info, "About Smaran", "Smaran — Remember. Plan. Achieve.")
                             Spacer(Modifier.height(8.dp))
-                            Text("1.0", color = SettingsMuted, fontSize = 14.sp, fontWeight = FontWeight.Medium, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+                            Text("1.0", color = colorScheme.onSurfaceVariant, fontSize = 14.sp, fontWeight = FontWeight.Medium, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
                             Spacer(Modifier.height(8.dp))
                             Text(
                                 "A simple, private task manager that helps you remember and plan your day.",
-                                color = SettingsMuted, fontSize = 13.sp, textAlign = TextAlign.Center
+                                color = colorScheme.onSurfaceVariant, fontSize = 13.sp, textAlign = TextAlign.Center
                             )
                             Spacer(Modifier.height(16.dp))
-                            Text("Report an Issue / Feedback", fontWeight = FontWeight.Bold, color = SettingsNavy, fontSize = 15.sp)
+                            Text("Report an Issue / Feedback", fontWeight = FontWeight.Bold, color = colorScheme.onSurface, fontSize = 15.sp)
                             Spacer(Modifier.height(4.dp))
                             Text(
                                 "We'd love to hear from you! If you encounter any issues or have suggestions to improve Smaran, " +
                                 "please reach out to us at:",
-                                color = SettingsMuted, fontSize = 13.sp, textAlign = TextAlign.Start
+                                color = colorScheme.onSurfaceVariant, fontSize = 13.sp, textAlign = TextAlign.Start
                             )
                             Spacer(Modifier.height(8.dp))
                             Row(
@@ -250,41 +269,45 @@ private fun SettingsDetailPage(title: String, state: SettingsUiState, manager: S
 
 @Composable
 private fun SettingSwitch(title: String, subtitle: String, icon: ImageVector, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+    val colorScheme = MaterialTheme.colorScheme
     Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-        Surface(modifier = Modifier.size(38.dp), shape = RoundedCornerShape(11.dp), color = Color(0xFFF1EDFF)) { Box(contentAlignment = Alignment.Center) { Icon(icon, title, tint = SettingsPurple, modifier = Modifier.size(21.dp)) } }
+        Surface(modifier = Modifier.size(38.dp), shape = RoundedCornerShape(11.dp), color = colorScheme.primary.copy(alpha = 0.12f)) { Box(contentAlignment = Alignment.Center) { Icon(icon, title, tint = SettingsPurple, modifier = Modifier.size(21.dp)) } }
         Spacer(Modifier.width(12.dp))
-        Column(Modifier.weight(1f)) { Text(title, fontWeight = FontWeight.SemiBold, color = SettingsNavy); Text(subtitle, color = SettingsMuted, fontSize = 11.sp) }
+        Column(Modifier.weight(1f)) { Text(title, fontWeight = FontWeight.SemiBold, color = colorScheme.onSurface); Text(subtitle, color = colorScheme.onSurfaceVariant, fontSize = 11.sp) }
         Switch(checked = checked, onCheckedChange = onCheckedChange)
     }
 }
 
 @Composable
 private fun SettingAction(title: String, subtitle: String, icon: ImageVector, context: Context, onClick: () -> Unit) {
+    val colorScheme = MaterialTheme.colorScheme
     Row(Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-        Surface(modifier = Modifier.size(38.dp), shape = RoundedCornerShape(11.dp), color = Color(0xFFF1EDFF)) { Box(contentAlignment = Alignment.Center) { Icon(icon, title, tint = SettingsPurple, modifier = Modifier.size(21.dp)) } }
+        Surface(modifier = Modifier.size(38.dp), shape = RoundedCornerShape(11.dp), color = colorScheme.primary.copy(alpha = 0.12f)) { Box(contentAlignment = Alignment.Center) { Icon(icon, title, tint = SettingsPurple, modifier = Modifier.size(21.dp)) } }
         Spacer(Modifier.width(12.dp))
-        Column(Modifier.weight(1f)) { Text(title, fontWeight = FontWeight.SemiBold, color = SettingsNavy); Text(subtitle, color = SettingsMuted, fontSize = 11.sp) }
-        Icon(Icons.Default.ChevronRight, "Open", tint = SettingsMuted)
+        Column(Modifier.weight(1f)) { Text(title, fontWeight = FontWeight.SemiBold, color = colorScheme.onSurface); Text(subtitle, color = colorScheme.onSurfaceVariant, fontSize = 11.sp) }
+        Icon(Icons.Default.ChevronRight, "Open", tint = colorScheme.onSurfaceVariant)
     }
 }
 
 @Composable
 private fun SettingChoice(title: String, selected: Boolean, onClick: () -> Unit) {
+    val colorScheme = MaterialTheme.colorScheme
     Row(Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 9.dp), verticalAlignment = Alignment.CenterVertically) {
-        Surface(modifier = Modifier.size(30.dp), shape = CircleShape, color = if (selected) Color(0xFFF1EDFF) else Color.Transparent) { Box(contentAlignment = Alignment.Center) { Icon(if (selected) Icons.Default.RadioButtonChecked else Icons.Default.RadioButtonUnchecked, title, tint = if (selected) SettingsPurple else SettingsMuted, modifier = Modifier.size(21.dp)) } }
+        Surface(modifier = Modifier.size(30.dp), shape = CircleShape, color = if (selected) colorScheme.primary.copy(alpha = 0.12f) else Color.Transparent) { Box(contentAlignment = Alignment.Center) { Icon(if (selected) Icons.Default.RadioButtonChecked else Icons.Default.RadioButtonUnchecked, title, tint = if (selected) SettingsPurple else colorScheme.onSurfaceVariant, modifier = Modifier.size(21.dp)) } }
         Spacer(Modifier.width(10.dp))
-        Text(title, color = SettingsNavy)
+        Text(title, color = colorScheme.onSurface)
     }
 }
 
 @Composable
 private fun InfoBlock(icon: ImageVector, title: String, message: String) {
+    val colorScheme = MaterialTheme.colorScheme
     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-        Surface(modifier = Modifier.size(60.dp), shape = CircleShape, color = Color(0xFFF1EDFF)) { Box(contentAlignment = Alignment.Center) { Icon(icon, title, tint = SettingsPurple, modifier = Modifier.size(30.dp)) } }
+        Surface(modifier = Modifier.size(60.dp), shape = CircleShape, color = colorScheme.primary.copy(alpha = 0.12f)) { Box(contentAlignment = Alignment.Center) { Icon(icon, title, tint = SettingsPurple, modifier = Modifier.size(30.dp)) } }
         Spacer(Modifier.height(12.dp))
-        Text(title, fontWeight = FontWeight.Bold, color = SettingsNavy)
+        Text(title, fontWeight = FontWeight.Bold, color = colorScheme.onSurface)
         Spacer(Modifier.height(6.dp))
-        Text(message, color = SettingsMuted, fontSize = 13.sp, textAlign = TextAlign.Center)
+        Text(message, color = colorScheme.onSurfaceVariant, fontSize = 13.sp, textAlign = TextAlign.Center)
     }
 }
 

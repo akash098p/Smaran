@@ -69,6 +69,15 @@ import java.time.temporal.TemporalAdjusters
 private val Purple = Color(0xFF5B2BD9)
 private val Background = Color(0xFFF9F8FD)
 private val Muted = Color(0xFF747384)
+private val WarmSurface = Color(0xFFF7EFF7)
+private val WarmChipBorder = Color(0xFF8C8391)
+private val CategoryPersonal = Color(0xFF9B7AF5)
+private val CategoryWork = Color(0xFFF08A5D)
+private val CategoryStudy = Color(0xFF3FA7D6)
+private val CategoryHealth = Color(0xFF41B86A)
+private val PriorityLowColor = Color(0xFF41B86A)
+private val PriorityMediumColor = Color(0xFFF1B84E)
+private val PriorityHighColor = Color(0xFFE35D5D)
 
 class SmaranActivityPhase3 : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -88,6 +97,7 @@ private fun SmaranPhase3(context: Context) {
     var showEditor by remember { mutableStateOf(false) }
     var editorDate by remember { mutableStateOf(LocalDate.now()) }
     var settingsProfileRequest by rememberSaveable { mutableIntStateOf(0) }
+    var settingsNotificationRequest by rememberSaveable { mutableIntStateOf(0) }
     var tab by rememberSaveable { mutableIntStateOf(0) }
     val tasks = remember(refresh) { store.getTasks() }
     val appearancePrefs = remember { AppearancePreferences(context) }
@@ -124,7 +134,8 @@ private fun SmaranPhase3(context: Context) {
                         tasks = tasks,
                         onComplete = { complete(it, store, history, scheduler) { refresh++ } },
                         onViewAll = { tab = 2 },
-                        onOpenProfile = { settingsProfileRequest++ ; tab = 4 }
+                        onOpenProfile = { settingsProfileRequest++ ; tab = 4 },
+                        onOpenNotifications = { settingsNotificationRequest++ ; tab = 4 }
                     )
                     1 -> CalendarPhase3(
                         tasks = tasks,
@@ -139,7 +150,11 @@ private fun SmaranPhase3(context: Context) {
                         onDelete = { delete(it, store, scheduler, history) { refresh++ } }
                     )
                     3 -> StatisticsPhase3(tasks, history)
-                    else -> Settings(context, profileEditRequest = settingsProfileRequest) { settingsVersion++ }
+                    else -> Settings(
+                        context,
+                        profileEditRequest = settingsProfileRequest,
+                        notificationsRequest = settingsNotificationRequest
+                    ) { settingsVersion++ }
                 }
             }
         }
@@ -188,13 +203,30 @@ private fun delete(task: Task, store: TaskStore, scheduler: ReminderScheduler, h
     }
 }
 
-@Composable private fun HomePhase3Modern(tasks: List<Task>, onComplete: (Task) -> Unit, onViewAll: () -> Unit, onOpenProfile: () -> Unit) {
+@Composable private fun HomePhase3Modern(tasks: List<Task>, onComplete: (Task) -> Unit, onViewAll: () -> Unit, onOpenProfile: () -> Unit, onOpenNotifications: () -> Unit) {
     val context = LocalContext.current
     val profile = remember { ProfilePreferences(context) }
     val name = remember(profile.name) { profile.name.ifBlank { "Akash" } }
     val today = LocalDate.now()
     val list = tasks.filter { it.date == today }.sortedBy { it.time }
     val hasNotifications = tasks.any { !it.completed && it.date <= today.plusDays(1) }
+    val streakDays = remember(tasks) {
+        val doneDays = tasks.filter { it.completed }.map { it.date }.toSet()
+        var count = 0
+        var day = today
+        while (doneDays.contains(day)) {
+            count++
+            day = day.minusDays(1)
+        }
+        count
+    }
+    val weekStart = remember(today) { today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)) }
+    val weekCompletionCounts = remember(tasks, weekStart) {
+        (0..6).associateWith { index ->
+            val day = weekStart.plusDays(index.toLong())
+            tasks.count { it.completed && it.date == day }
+        }
+    }
 
     LazyColumn(
         Modifier.fillMaxSize().padding(horizontal = 18.dp),
@@ -212,7 +244,9 @@ private fun delete(task: Task, store: TaskStore, scheduler: ReminderScheduler, h
                 }
                 Spacer(Modifier.width(12.dp))
                 Column(horizontalAlignment = Alignment.End) {
-                    NotificationBell(hasNotifications)
+                    Box(Modifier.clickable { onOpenNotifications() }) {
+                        NotificationBell(hasNotifications)
+                    }
                     Spacer(Modifier.height(10.dp))
                     Box(Modifier.clickable { onOpenProfile() }) {
                         ProfileAvatarSmall(name, profile.profileImageUri, 56)
@@ -231,6 +265,32 @@ private fun delete(task: Task, store: TaskStore, scheduler: ReminderScheduler, h
                     Text("Mark Twain", color = MaterialTheme.colorScheme.onPrimary.copy(.75f), fontSize = 12.sp)
                 }
             }
+        }
+        item {
+            Card(
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                shape = RoundedCornerShape(18.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        Text("Current Streak", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                        Text("Consecutive days with completed tasks.", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
+                    }
+                    Text(
+                        "$streakDays days",
+                        color = Purple,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+        }
+        item {
+            WeekStreakBar(weekStart = weekStart, completionCounts = weekCompletionCounts)
         }
         item {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -543,7 +603,9 @@ private fun MagicNavigationBar(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(
-                        Modifier.padding(18.dp),
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(18.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
@@ -715,7 +777,15 @@ private fun CalendarAgendaRow(task: Task, onClick: () -> Unit) {
             .toList()
     }
 
-    val grouped = visible.groupBy { it.date }.toSortedMap()
+    val grouped = visible.groupBy { it.date }.toSortedMap { a, b ->
+        when {
+            a == today && b != today -> -1
+            a != today && b == today -> 1
+            a.isAfter(today) && b.isBefore(today) -> -1
+            a.isBefore(today) && b.isAfter(today) -> 1
+            else -> a.compareTo(b)
+        }
+    }
 
     Box(Modifier.fillMaxSize()) {
         LazyColumn(
@@ -734,7 +804,12 @@ private fun CalendarAgendaRow(task: Task, onClick: () -> Unit) {
             if (visible.isEmpty()) {
                 item {
                     Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), modifier = Modifier.fillMaxWidth()) {
-                        Column(Modifier.padding(22.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                        Column(
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(22.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
                             Icon(Icons.Default.Search, null, tint = MaterialTheme.colorScheme.primary)
                             Spacer(Modifier.height(8.dp))
                             Text("No tasks found", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
@@ -998,9 +1073,9 @@ private fun TaskTaskCard(task: Task, onEdit: (Task) -> Unit, onComplete: (Task) 
                     CompletionRing(progress = rate / 100f)
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Text("Completion Rate", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
-                        Text("Great Job! 🎉", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface, fontSize = 18.sp)
+                        Text(completionHeadline(rate), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface, fontSize = 18.sp)
                         Text(
-                            "You are more productive than ${rate.coerceAtMost(99)}% of users this week.",
+                            completionBody(rate),
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 13.sp,
                             lineHeight = 18.sp
@@ -1148,13 +1223,96 @@ private fun TaskTaskCard(task: Task, onEdit: (Task) -> Unit, onComplete: (Task) 
     AlertDialog(onDismissRequest = onDismiss, title = { Text(if(existing == null) "Create Task" else "Edit / Reschedule") }, text = { Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         OutlinedTextField(title, { title = it }, Modifier.fillMaxWidth(), singleLine = true, label = { Text("Task title") }); OutlinedTextField(description, { description = it }, Modifier.fillMaxWidth(), label = { Text("Description") })
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) { OutlinedButton({ DatePickerDialog(context, { _, y, m, d -> date = LocalDate.of(y, m + 1, d) }, date.year, date.monthValue - 1, date.dayOfMonth).show() }, Modifier.weight(1f)) { Text(date.toString()) }; OutlinedButton({ TimePickerDialog(context, { _, h, m -> time = LocalTime.of(h, m) }, time.hour, time.minute, true).show() }, Modifier.weight(1f)) { Text(time.format(DateTimeFormatter.ofPattern("hh:mm a"))) } }
-        Text("Category", color = Muted, fontSize = 11.sp); Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) { for (cat in listOf("Personal","Work","Study","Health")) { FilterChip(selected = category == cat, onClick = { category = cat }, label = { Text(cat) }) } }
-        Text("Priority", color = Muted, fontSize = 11.sp); Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) { for (p in Priority.entries) { FilterChip(selected = priority == p, onClick = { priority = p }, label = { Text(p.name.lowercase()) }) } }
+        Text("Category", color = Muted, fontSize = 11.sp)
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                CategoryChip("Personal", category == "Personal", CategoryPersonal) { category = "Personal" }
+                CategoryChip("Work", category == "Work", CategoryWork) { category = "Work" }
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                CategoryChip("Study", category == "Study", CategoryStudy, modifier = Modifier.weight(1f)) { category = "Study" }
+                CategoryChip("Health", category == "Health", CategoryHealth, modifier = Modifier.weight(1f)) { category = "Health" }
+            }
+        }
+        Text("Priority", color = Muted, fontSize = 11.sp)
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+            PriorityChip("Low", priority == Priority.LOW, PriorityLowColor) { priority = Priority.LOW }
+            PriorityChip("Medium", priority == Priority.MEDIUM, PriorityMediumColor) { priority = Priority.MEDIUM }
+            PriorityChip("High", priority == Priority.HIGH, PriorityHighColor) { priority = Priority.HIGH }
+        }
         Row(verticalAlignment = Alignment.CenterVertically) { Checkbox(recurring, { recurring = it }); Text("Repeat daily") }
     } }, confirmButton = { Button(enabled = title.isNotBlank(), onClick = { onSave(Task(existing?.id ?: System.currentTimeMillis(), title.trim(), description.trim(), date, time, category, priority, existing?.completed ?: false, recurring)) }, colors = ButtonDefaults.buttonColors(containerColor = Purple)) { Text("Save") } }, dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } })
 }
 
 private fun greeting() = when(LocalTime.now().hour) { in 0..11 -> "Good Morning, 👋"; in 12..16 -> "Good Afternoon, 👋"; else -> "Good Evening, 👋" }
+
+private fun completionHeadline(rate: Int): String = when (rate) {
+    0 -> "No progress yet"
+    in 1..24 -> "Small steps count"
+    in 25..49 -> "Good momentum"
+    in 50..74 -> "Solid progress"
+    in 75..99 -> "Excellent work"
+    else -> "Perfect week"
+}
+
+private fun completionBody(rate: Int): String = when (rate) {
+    0 -> "No completed tasks this week yet. Start with one task and build from there."
+    in 1..24 -> "You have started moving. Keep the streak going with a few more wins."
+    in 25..49 -> "You are building consistency. A few more completions will push this higher."
+    in 50..74 -> "You are past the halfway mark and making real progress this week."
+    in 75..99 -> "You are close to a full win. One or two more tasks will finish the week strong."
+    else -> "All tasks are completed. That is a perfect week."
+}
+
+@Composable
+private fun CategoryChip(label: String, selected: Boolean, accent: Color, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    val background = if (selected) accent.copy(alpha = 0.16f) else WarmSurface
+    val border = if (selected) accent else WarmChipBorder.copy(alpha = 0.65f)
+    val textColor = if (selected) Purple else Color(0xFF4B4652)
+    Row(
+        modifier = modifier
+            .clip(RoundedCornerShape(18.dp))
+            .background(background)
+            .border(1.dp, border, RoundedCornerShape(18.dp))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 14.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Box(
+            Modifier
+                .size(10.dp)
+                .clip(CircleShape)
+                .background(accent)
+        )
+        Text(label, color = textColor, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+    }
+}
+
+@Composable
+private fun PriorityChip(label: String, selected: Boolean, accent: Color, onClick: () -> Unit) {
+    val background = if (selected) accent.copy(alpha = 0.16f) else Color(0xFFF8F2F8)
+    val border = if (selected) accent else WarmChipBorder.copy(alpha = 0.65f)
+    val textColor = if (selected) Color(0xFF2C2330) else Color(0xFF4B4652)
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(18.dp))
+            .background(background)
+            .border(1.dp, border, RoundedCornerShape(18.dp))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 14.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Box(
+            Modifier
+                .size(10.dp)
+                .clip(CircleShape)
+                .background(accent)
+        )
+        Text(label, color = textColor, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+    }
+}
 
 @Composable
 fun TypewriterText(text: String, color: Color, style: TextStyle, delayMillis: Long = 50L, repeat: Boolean = false) {

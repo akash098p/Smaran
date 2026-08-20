@@ -7,6 +7,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,6 +17,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -47,7 +50,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
@@ -109,6 +116,9 @@ private val steps = listOf(
 class SmaranLauncherActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        window.statusBarColor = android.graphics.Color.rgb(21, 23, 51)
+        window.navigationBarColor = android.graphics.Color.rgb(21, 23, 51)
+        window.decorView.systemUiVisibility = 0
         val launcher = this
         val prefs = getSharedPreferences("smaran_app", Context.MODE_PRIVATE)
 
@@ -156,7 +166,7 @@ class SmaranLauncherActivity : ComponentActivity() {
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(horizontal = 22.dp, vertical = 18.dp),
+                            .padding(start = 20.dp, end = 20.dp, top = 38.dp, bottom = 14.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         TopBar(
@@ -167,18 +177,30 @@ class SmaranLauncherActivity : ComponentActivity() {
                             }
                         )
 
-                        Spacer(Modifier.height(18.dp))
+                        Spacer(Modifier.height(8.dp))
 
-                        Card(
+                        Column(
                             modifier = Modifier
                                 .fillMaxWidth(),
-                            shape = RoundedCornerShape(32.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color(0xFF191B36).copy(alpha = 0.96f)),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                         ) {
                             Column(
                                 modifier = Modifier
                                     .fillMaxSize()
+                                    .pointerInput(Unit) {
+                                        var dragDistance = 0f
+                                        detectHorizontalDragGestures(
+                                            onHorizontalDrag = { change, amount ->
+                                                change.consume()
+                                                dragDistance += amount
+                                            },
+                                            onDragEnd = {
+                                                if (dragDistance < -72f && page < steps.lastIndex) page++
+                                                if (dragDistance > 72f && page > 0) page--
+                                                dragDistance = 0f
+                                            },
+                                            onDragCancel = { dragDistance = 0f }
+                                        )
+                                    }
                                     .padding(horizontal = 22.dp, vertical = 24.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 verticalArrangement = Arrangement.SpaceBetween
@@ -214,8 +236,10 @@ class SmaranLauncherActivity : ComponentActivity() {
                                         )
                                     }
 
-                                    Spacer(Modifier.height(18.dp))
-                                    ChipRow(items = step.chips, accent = step.accent)
+                                    if (page < 4) {
+                                        Spacer(Modifier.height(18.dp))
+                                        ChipRow(items = step.chips, accent = step.accent)
+                                    }
                                 }
 
                                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -240,16 +264,9 @@ class SmaranLauncherActivity : ComponentActivity() {
                                         colors = ButtonDefaults.buttonColors(containerColor = OnboardingPurple)
                                     ) {
                                         Text(
-                                            text = if (page == 4) "Get Started" else "Next",
+                                            text = if (page == 4) "Get Started →" else "Next ▶",
                                             color = OnboardingNavy,
                                             fontSize = 16.sp,
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                        Spacer(Modifier.width(8.dp))
-                                        Text(
-                                            text = ">",
-                                            color = OnboardingNavy,
-                                            fontSize = 18.sp,
                                             fontWeight = FontWeight.Bold
                                         )
                                     }
@@ -265,23 +282,18 @@ class SmaranLauncherActivity : ComponentActivity() {
 
 @Composable
 private fun TopBar(onSkip: () -> Unit) {
-    Row(
+    Box(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+        contentAlignment = Alignment.Center
     ) {
-        Column {
-            Text(
-                text = "SMARAN",
-                color = Color.White,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Black,
-                letterSpacing = 1.8.sp
-            )
-            Text(text = "Onboarding Flow", color = OnboardingMuted, fontSize = 11.sp)
-        }
-        TextButton(onClick = onSkip) {
-            Text(text = "Skip", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+        Image(
+            painter = painterResource(id = R.mipmap.ic_launcher_foreground),
+            contentDescription = "Smaran",
+            modifier = Modifier.size(68.dp),
+            contentScale = ContentScale.Fit
+        )
+        TextButton(onClick = onSkip, modifier = Modifier.align(Alignment.CenterEnd)) {
+            Text(text = "Skip", color = OnboardingMuted, fontSize = 14.sp, fontWeight = FontWeight.Medium)
         }
     }
 }
@@ -291,79 +303,30 @@ private fun HeroArt(step: Step, page: Int) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(228.dp),
+            .heightIn(min = 340.dp, max = 580.dp),
         contentAlignment = Alignment.Center
     ) {
         Box(
             modifier = Modifier
-                .size(220.dp)
+                .size(320.dp)
                 .clip(CircleShape)
-                .background(step.accent.copy(alpha = 0.12f))
+                .background(step.accent.copy(alpha = 0.10f))
         )
-        Box(
-            modifier = Modifier
-                .size(160.dp)
-                .clip(RoundedCornerShape(44.dp))
-                .background(
-                    Brush.linearGradient(
-                        listOf(
-                            Color.White.copy(alpha = 0.15f),
-                            Color.White.copy(alpha = 0.05f)
-                        )
-                    )
-                )
-                .border(1.dp, Color.White.copy(alpha = 0.07f), RoundedCornerShape(44.dp))
-        )
-        Box(
-            modifier = Modifier
-                .size(96.dp)
-                .clip(CircleShape)
-                .background(
-                    Brush.radialGradient(
-                        listOf(step.accent.copy(alpha = 0.95f), step.accent.copy(alpha = 0.45f))
-                    )
-                )
-        )
-        Box(
-            modifier = Modifier
-                .size(72.dp)
-                .clip(CircleShape)
-                .background(Color.White.copy(alpha = 0.10f))
-        )
-        androidx.compose.material3.Icon(
-            imageVector = step.icon,
+        Image(
+            painter = painterResource(id = listOf(
+                R.drawable.onboarding_page_1,
+                R.drawable.onboarding_page_2,
+                R.drawable.onboarding_page_3,
+                R.drawable.onboarding_page_4,
+                R.drawable.onboarding_page_5
+            )[page]),
             contentDescription = null,
-            tint = Color.White,
-            modifier = Modifier.size(52.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 340.dp, max = 580.dp)
+                .scale(1.15f),
+            contentScale = ContentScale.Fit
         )
-
-        when (page) {
-            0 -> {
-                FloatingBadge("Focus", Modifier.align(Alignment.TopStart).offset(12.dp, 34.dp), step.accent)
-                FloatingBadge("Tap once", Modifier.align(Alignment.TopEnd).offset((-4).dp, 52.dp), Color(0xFFFFC47D))
-                FloatingBadge("No clutter", Modifier.align(Alignment.BottomEnd).offset(10.dp, (-4).dp), Color(0xFF98E0B2))
-            }
-            1 -> {
-                FloatingBadge("Work", Modifier.align(Alignment.TopStart).offset(18.dp, 40.dp), Color(0xFF9D88FF))
-                FloatingBadge("Study", Modifier.align(Alignment.TopEnd).offset((-4).dp, 64.dp), Color(0xFF78C6FF))
-                FloatingBadge("Routine", Modifier.align(Alignment.BottomStart).offset(16.dp, (-2).dp), Color(0xFFFFC24D))
-            }
-            2 -> {
-                FloatingBadge("15 min", Modifier.align(Alignment.TopEnd).offset((-4).dp, 42.dp), Color(0xFFFFD66B))
-                FloatingBadge("30 min", Modifier.align(Alignment.CenterEnd).offset(0.dp, 0.dp), Color(0xFF9C8BFF))
-                FloatingBadge("1 hour", Modifier.align(Alignment.BottomEnd).offset((-6).dp, (-12).dp), Color(0xFF9DE3B8))
-            }
-            3 -> {
-                FloatingBadge("History", Modifier.align(Alignment.TopStart).offset(20.dp, 44.dp), Color(0xFF8CD7FF))
-                FloatingBadge("Streak", Modifier.align(Alignment.TopEnd).offset((-2).dp, 48.dp), Color(0xFFFFC24D))
-                FloatingBadge("Insights", Modifier.align(Alignment.BottomStart).offset(18.dp, (-10).dp), Color(0xFF98E0B2))
-            }
-            4 -> {
-                ProfilePreviewCard(modifier = Modifier.align(Alignment.BottomCenter))
-                FloatingBadge("Local only", Modifier.align(Alignment.TopStart).offset(18.dp, 50.dp), Color(0xFF8CD7FF))
-                FloatingBadge("Personal", Modifier.align(Alignment.TopEnd).offset((-4).dp, 60.dp), Color(0xFFFFC47D))
-            }
-        }
     }
 }
 

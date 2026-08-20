@@ -33,7 +33,9 @@ import androidx.compose.ui.unit.sp
 import com.smaran.app.data.local.TaskStore
 import com.smaran.app.data.model.Priority
 import com.smaran.app.data.model.Task
+import com.smaran.app.profile.ProfilePreferences
 import com.smaran.app.reminder.scheduler.ReminderScheduler
+import com.smaran.app.settings.AppearancePreferences
 import com.smaran.app.settings.Settings as FunctionalSettings
 import java.time.LocalDate
 import java.time.LocalTime
@@ -67,29 +69,56 @@ private fun SmaranApp(context: Context) {
     val store = remember { TaskStore(context) }
     val scheduler = remember { ReminderScheduler(context) }
     val tasks = remember(refresh) { store.getTasks() }
+    val appearancePrefs = remember { AppearancePreferences(context) }
+    var settingsVersion by remember { mutableIntStateOf(0) }
+    val effectiveIsDark = remember(settingsVersion) { appearancePrefs.darkMode }
+    val useDynamic = remember(settingsVersion) { appearancePrefs.dynamicColor }
 
     if (onboarding) {
         Onboarding { prefs.edit().putBoolean("onboarding_done", true).apply(); onboarding = false }
         return
     }
 
-    Scaffold(
-        containerColor = Background,
-        bottomBar = {
-            NavigationBar(containerColor = Color.White) {
-                SmaranTab.entries.forEachIndexed { index, item ->
-                    NavigationBarItem(index == tab, { tab = index }, icon = { Icon(tabIcon(item), item.title) }, label = { Text(item.title, fontSize = 9.sp) })
+    val colorScheme = if (useDynamic && Build.VERSION.SDK_INT >= 31) {
+        if (effectiveIsDark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+    } else if (effectiveIsDark) darkColorScheme(
+        surface = Color(0xFF121212),
+        surfaceVariant = Color(0xFF1E1E1E),
+        onSurface = Color.White,
+        onSurfaceVariant = Color(0xFF9E9E9E),
+        primary = Purple,
+        secondary = Purple,
+        background = Color(0xFF121212),
+        onBackground = Color.White
+    ) else lightColorScheme(
+        surface = Color.White,
+        surfaceVariant = Color(0xFFF9F8FD),
+        onSurface = Color(0xFF171728),
+        onSurfaceVariant = Color(0xFF747384),
+        primary = Purple,
+        secondary = Purple,
+        background = Color(0xFFF9F8FD),
+        onBackground = Color(0xFF171728)
+    )
+    MaterialTheme(colorScheme = colorScheme) {
+        Scaffold(
+            containerColor = MaterialTheme.colorScheme.background,
+            bottomBar = {
+                NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
+                    SmaranTab.entries.forEachIndexed { index, item ->
+                        NavigationBarItem(index == tab, { tab = index }, icon = { Icon(tabIcon(item), item.title) }, label = { Text(item.title, fontSize = 9.sp) })
+                    }
                 }
             }
-        }
-    ) { padding ->
-        Box(Modifier.fillMaxSize().padding(padding)) {
-            when (SmaranTab.entries[tab]) {
-                SmaranTab.HOME -> Home(tasks, { showAdd = true }) { complete(it, store, scheduler) { refresh++ } }
-                SmaranTab.CALENDAR -> Calendar(tasks) { showAdd = true }
-                SmaranTab.TASKS -> Tasks(tasks, { showAdd = true }) { complete(it, store, scheduler) { refresh++ } }
-                SmaranTab.STATS -> Statistics(tasks)
-                SmaranTab.SETTINGS -> FunctionalSettings(context)
+        ) { padding ->
+            Box(Modifier.fillMaxSize().padding(padding)) {
+                when (SmaranTab.entries[tab]) {
+                    SmaranTab.HOME -> Home(tasks, { showAdd = true }) { complete(it, store, scheduler) { refresh++ } }
+                    SmaranTab.CALENDAR -> Calendar(tasks) { showAdd = true }
+                    SmaranTab.TASKS -> Tasks(tasks, { showAdd = true }) { complete(it, store, scheduler) { refresh++ } }
+                    SmaranTab.STATS -> Statistics(tasks)
+                    SmaranTab.SETTINGS -> FunctionalSettings(context) { settingsVersion++ }
+                }
             }
         }
     }
@@ -114,9 +143,12 @@ private fun complete(task: Task, store: TaskStore, scheduler: ReminderScheduler,
 }
 
 @Composable private fun Home(tasks: List<Task>, add: () -> Unit, complete: (Task) -> Unit) {
+    val context = LocalContext.current
+    val profilePrefs = remember { ProfilePreferences(context) }
+    val userName = remember(profilePrefs) { profilePrefs.name.ifBlank { "Akash" } }
     val today = LocalDate.now(); val todayTasks = tasks.filter { it.date == today }.sortedBy { it.time }
     LazyColumn(Modifier.fillMaxSize().padding(horizontal = 20.dp), contentPadding = PaddingValues(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        item { Row(verticalAlignment = Alignment.CenterVertically) { Column(Modifier.weight(1f)) { Text(greeting(), color = Muted); Text("Akash", fontSize = 27.sp, fontWeight = FontWeight.Bold) }; Avatar() } }
+        item { Row(verticalAlignment = Alignment.CenterVertically) { Column(Modifier.weight(1f)) { Text(greeting(), color = Muted); Text(userName, fontSize = 27.sp, fontWeight = FontWeight.Bold) }; Avatar() } }
         item { Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = Purple), modifier = Modifier.fillMaxWidth()) { Column(Modifier.padding(18.dp)) { Text("The secret of getting ahead is getting started.", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.SemiBold); Spacer(Modifier.height(7.dp)); Text("— Mark Twain", color = Color.White.copy(.75f), fontSize = 12.sp) } } }
         item { Row(verticalAlignment = Alignment.CenterVertically) { Text("Today · ${today.format(DateTimeFormatter.ofPattern("d MMMM"))}", fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f)); TextButton(onClick = add) { Text("+ Add", color = Purple) } } }
         if (todayTasks.isEmpty()) item { Empty("No tasks today", "Create your first reminder.", add) }

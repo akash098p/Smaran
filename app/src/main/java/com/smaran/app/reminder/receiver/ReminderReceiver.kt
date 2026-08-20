@@ -11,8 +11,10 @@ import com.smaran.app.R
 import com.smaran.app.data.local.HistoryStore
 import com.smaran.app.data.local.TaskStore
 import com.smaran.app.data.model.HistoryAction
+import com.smaran.app.data.model.RecurrenceType
 import com.smaran.app.reminder.RescheduleActivity
 import com.smaran.app.reminder.scheduler.ReminderScheduler
+import com.smaran.app.settings.ReminderPreferences
 import java.time.LocalDateTime
 
 class ReminderReceiver : BroadcastReceiver() {
@@ -29,7 +31,18 @@ class ReminderReceiver : BroadcastReceiver() {
                 scheduler.cancel(taskId)
                 history.record(taskId, HistoryAction.COMPLETED)
                 if (task.recurring) {
-                    val next = task.copy(id = System.currentTimeMillis(), date = task.date.plusDays(1), completed = false)
+                    val nextDate = when (task.recurrenceType) {
+                        RecurrenceType.DAILY -> task.date.plusDays(1)
+                        RecurrenceType.WEEKLY -> task.date.plusWeeks(1)
+                        RecurrenceType.MONTHLY -> task.date.plusMonths(1)
+                        RecurrenceType.WEEKDAYS -> {
+                            var d = task.date.plusDays(1)
+                            while (d.dayOfWeek.value > 5) d = d.plusDays(1)
+                            d
+                        }
+                        RecurrenceType.NONE -> task.date.plusDays(1)
+                    }
+                    val next = task.copy(id = System.currentTimeMillis(), date = nextDate, completed = false)
                     store.add(next)
                     scheduler.schedule(next.id, next.title, next.date.atTime(next.time))
                     history.record(next.id, HistoryAction.CREATED, next = next.date.atTime(next.time))
@@ -52,7 +65,13 @@ class ReminderReceiver : BroadcastReceiver() {
 
     private fun showNotification(context: Context, taskId: Long, title: String, snoozedFor: Int?) {
         val manager = notifyManager(context)
-        manager.createNotificationChannel(NotificationChannel(CHANNEL_ID, "Smaran Reminders", NotificationManager.IMPORTANCE_HIGH).apply { description = "Task reminder alerts" })
+        val prefs = ReminderPreferences(context)
+        val channel = NotificationChannel(CHANNEL_ID, "Smaran Reminders", NotificationManager.IMPORTANCE_HIGH).apply {
+            description = "Task reminder alerts"
+            enableVibration(prefs.vibrationEnabled)
+            if (!prefs.soundEnabled) setSound(null, null)
+        }
+        manager.createNotificationChannel(channel)
         val openIntent = PendingIntent.getActivity(context, taskId.hashCode(), Intent(context, com.smaran.app.SmaranActivityPhase3::class.java), PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         val completeIntent = actionIntent(context, ACTION_COMPLETE, taskId, 0)
         val snooze15 = actionIntent(context, ACTION_SNOOZE, taskId, 15)

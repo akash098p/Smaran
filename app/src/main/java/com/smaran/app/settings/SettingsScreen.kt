@@ -28,6 +28,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import java.io.File
+import java.io.FileOutputStream
 import com.smaran.app.profile.ProfilePreferences
 import com.smaran.app.reminder.AlarmPermissionHelper
 
@@ -38,18 +40,24 @@ private val SettingsNavy = Color(0xFF151733)
 private data class SettingsEntry(val title: String, val subtitle: String, val icon: ImageVector)
 
 @Composable
-fun Settings(context: Context) {
+fun Settings(context: Context, profileEditRequest: Int = 0, onSettingsChanged: () -> Unit = {}) {
     val manager = remember { SettingsManager(context) }
     val profile = remember { ProfilePreferences(context) }
     var state by remember { mutableStateOf(manager.read()) }
     var page by rememberSaveable { mutableStateOf<String?>(null) }
+    LaunchedEffect(profileEditRequest) {
+        if (profileEditRequest > 0) page = "Profile"
+    }
     var profileVersion by remember { mutableIntStateOf(0) }
 
     if (page != null) {
         if (page == "Profile") {
             ProfileEditor(profile, { profileVersion++; page = null }, { page = null })
         } else {
-            SettingsDetailPage(page!!, state, manager, context, { state = manager.read() }, { page = null })
+            SettingsDetailPage(page!!, state, manager, context, refresh = {
+                state = manager.read()
+                onSettingsChanged()
+            }, { page = null })
         }
         return
     }
@@ -60,7 +68,6 @@ fun Settings(context: Context) {
     @Suppress("UNUSED_VARIABLE") val version = profileVersion
 
     val entries = listOf(
-        SettingsEntry("General", "Basic app preferences", Icons.Default.Tune),
         SettingsEntry("Reminders", "Sound, vibration and snooze", Icons.Default.NotificationsActive),
         SettingsEntry("Appearance", "Theme and colors", Icons.Default.Palette),
         SettingsEntry("Backup & Restore", "Protect your local tasks", Icons.Default.Backup),
@@ -134,11 +141,17 @@ private fun SettingsItem(entry: SettingsEntry, onClick: () -> Unit) {
 
 @Composable
 private fun ProfileEditor(profile: ProfilePreferences, onSaved: () -> Unit, onBack: () -> Unit) {
+    val context = LocalContext.current
     var name by rememberSaveable { mutableStateOf(profile.name) }
     var email by rememberSaveable { mutableStateOf(profile.email) }
     var age by rememberSaveable { mutableStateOf(profile.age) }
     var imageUri by rememberSaveable { mutableStateOf(profile.profileImageUri) }
-    val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri -> if (uri != null) imageUri = uri.toString() }
+    val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        if (uri != null) {
+            val persistedUri = copyToInternalStorage(context, uri)
+            if (persistedUri != null) imageUri = persistedUri
+        }
+    }
 
     LazyColumn(Modifier.fillMaxSize().padding(horizontal = 20.dp), contentPadding = PaddingValues(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         item { Row(verticalAlignment = Alignment.CenterVertically) { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Back") }; Text("Profile", fontSize = 25.sp, fontWeight = FontWeight.Bold, color = SettingsNavy) } }
@@ -181,7 +194,6 @@ private fun SettingsDetailPage(title: String, state: SettingsUiState, manager: S
             Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = Color.White), modifier = Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     when (title) {
-                        "General" -> InfoBlock(Icons.Default.Tune, "General", "Smaran uses a local-first design for tasks and reminders.")
                         "Reminders" -> {
                             SettingSwitch("Reminder sound", "Play sound with reminder notifications", Icons.Default.VolumeUp, state.soundEnabled) { manager.setSoundEnabled(it); refresh() }
                             SettingSwitch("Vibration", "Vibrate for reminder notifications", Icons.Default.Vibration, state.vibrationEnabled) { manager.setVibrationEnabled(it); refresh() }
@@ -197,7 +209,38 @@ private fun SettingsDetailPage(title: String, state: SettingsUiState, manager: S
                         "Data & Storage" -> InfoBlock(Icons.Default.Storage, "Data & Storage", "Your current task data remains stored locally on this device.")
                         "Notifications" -> InfoBlock(Icons.Default.Notifications, "Notifications", "Notification behavior is kept separate from task scheduling.")
                         "Privacy" -> InfoBlock(Icons.Default.Lock, "Privacy", "Your profile and task information are stored locally on this device.")
-                        "About Smaran" -> InfoBlock(Icons.Default.Info, "About Smaran", "Smaran — Remember. Plan. Achieve.")
+                        "About Smaran" -> {
+                            InfoBlock(Icons.Default.Info, "About Smaran", "Smaran — Remember. Plan. Achieve.")
+                            Spacer(Modifier.height(8.dp))
+                            Text("1.0", color = SettingsMuted, fontSize = 14.sp, fontWeight = FontWeight.Medium, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                "A simple, private task manager that helps you remember and plan your day.",
+                                color = SettingsMuted, fontSize = 13.sp, textAlign = TextAlign.Center
+                            )
+                            Spacer(Modifier.height(16.dp))
+                            Text("Report an Issue / Feedback", fontWeight = FontWeight.Bold, color = SettingsNavy, fontSize = 15.sp)
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                "We'd love to hear from you! If you encounter any issues or have suggestions to improve Smaran, " +
+                                "please reach out to us at:",
+                                color = SettingsMuted, fontSize = 13.sp, textAlign = TextAlign.Start
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.clickable {
+                                    val intent = android.content.Intent(android.content.Intent.ACTION_SENDTO).apply {
+                                        data = android.net.Uri.parse("mailto:nexteraf@gmail.com")
+                                    }
+                                    context.startActivity(intent)
+                                }
+                            ) {
+                                Icon(Icons.Default.Email, null, tint = SettingsPurple, modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Text("nexteraf@gmail.com", color = SettingsPurple, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                            }
+                        }
                     }
                 }
             }
@@ -242,5 +285,21 @@ private fun InfoBlock(icon: ImageVector, title: String, message: String) {
         Text(title, fontWeight = FontWeight.Bold, color = SettingsNavy)
         Spacer(Modifier.height(6.dp))
         Text(message, color = SettingsMuted, fontSize = 13.sp, textAlign = TextAlign.Center)
+    }
+}
+
+private fun copyToInternalStorage(context: Context, uri: android.net.Uri): String? {
+    return try {
+        val inputStream = context.contentResolver.openInputStream(uri) ?: return null
+        val dir = File(context.filesDir, "profile_images")
+        dir.mkdirs()
+        val file = File(dir, "profile_picture.jpg")
+        FileOutputStream(file).use { output ->
+            inputStream.copyTo(output)
+        }
+        inputStream.close()
+        file.toURI().toString()
+    } catch (e: Exception) {
+        null
     }
 }

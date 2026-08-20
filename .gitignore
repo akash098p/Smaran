@@ -78,7 +78,6 @@ build/reports/
 # Screenshots (keep the .gitkeep)
 screenshots/*
 !screenshots/.gitkeep
-
 # Design files (keep the .gitkeep)
 design/*
 !design/.gitkeep

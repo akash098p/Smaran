@@ -2,7 +2,10 @@
 
 **Remember. Act. Complete.**
 
-Smaran (स्मरण — *remembrance*) is a modern, lightweight, offline-first Android task reminder app. Create tasks, receive reliable reminders, snooze or reschedule unfinished work, and keep a complete history of your productivity.
+Smaran (स्मरण — *remembrance*) is a modern, lightweight, offline-first Android task reminder app. It helps you create tasks, receive reliable reminders, snooze or reschedule unfinished work, and keep a complete history of your productivity.
+
+
+---
 
 ## ✨ Features
 
@@ -14,16 +17,33 @@ Smaran (स्मरण — *remembrance*) is a modern, lightweight, offline-fir
 - 📴 **Offline-first** — no account, no cloud, no internet required
 - 🔐 **Privacy-focused** — all data stays on-device
 
-## 📸 Demo
-
+---
 
 ## 🛠️ Tech Stack
 
-Kotlin · Jetpack Compose · Material 3 · Room · MVVM · Coroutines/Flow · AlarmManager · Navigation Compose · DataStore
+| Technology | Purpose |
+|---|---|
+| Kotlin | Primary language |
+| Jetpack Compose | Modern UI |
+| Material 3 | Design system |
+| Room | Local database |
+| MVVM + ViewModel | Architecture |
+| Coroutines / Flow | Async & reactive state |
+| AlarmManager | Scheduled reminders |
+| Notification API | Reminder notifications |
+| Navigation Compose | Navigation |
+| DataStore | Preferences |
+
+---
 
 ## 🚀 Getting Started
 
-**Prerequisites:** Android Studio (latest stable) · JDK 17+
+### Prerequisites
+
+- **Android Studio** (latest stable)
+- **JDK 17+**
+
+### Build & Install
 
 ```bash
 # Build the app
@@ -33,30 +53,58 @@ Kotlin · Jetpack Compose · Material 3 · Room · MVVM · Coroutines/Flow · Al
 ./gradlew installDebug
 ```
 
-**Requirements:** Android SDK 26+ (min) / 35 (target) · Java 17 · Kotlin 2.0+ with Compose plugin
+### Project Requirements
+
+- **Android SDK 26+** (min) / **35** (target)
+- **Java 17** compatibility
+- **Kotlin 2.0+** with Compose plugin
+
+---
 
 ## 📁 Project Structure
 
 ```
 app/src/main/java/com/smaran/app/
-├── core/          # Navigation, constants, extensions, validation
-├── data/          # Local storage, mappers, models, repositories
+├── core/          # Navigation, constants, extensions, validation, result types
+├── data/          # Local storage, mappers, models, preferences, repositories
 ├── domain/        # Domain models, use cases, repository interfaces
-├── home/          # Home screen
+├── home/          # Home screen (components, UI, view model)
 ├── profile/       # Profile preferences
-├── reminder/      # Alarm scheduling, notifications, receivers
+├── reminder/      # Alarm scheduling, notifications, receivers, rescheduling
 ├── settings/      # App, appearance, and reminder settings
-├── task/          # Task lifecycle (create, edit, complete, snooze, recurring)
+├── task/          # Task lifecycle (create, edit, delete, complete, snooze, reschedule, recurring)
 └── ui/            # Shared UI — history, task details
 ```
 
+---
+
 ## 🤝 Contributing
 
-Ideas, bug reports, and pull requests are welcome. For bugs, include what happened, expected behavior, steps to reproduce, and Android version/device.
+Ideas, bug reports, and pull requests are welcome.
+
+For bugs, include:
+1. What happened
+2. Expected behavior
+3. Steps to reproduce
+4. Android version / device
+
+For feature requests, describe the problem it solves and how you expect it to work.
+
+---
 
 ## 🧑‍💻 Developer
 
 **Akash Pramanik**
 
-[![Instagram](https://img.shields.io/badge/akash.098p-E4405F?style=flat&logo=instagram&logoColor=white)](https://instagram.com/akash.098p)
-[![Email](https://img.shields.io/badge/akashpramanik098%40gmail.com-D14836?style=flat&logo=gmail&logoColor=white)](mailto:akashpramanik098@gmail.com)
+<p>
+  <strong>For questions or support: </strong>
+<a href="https://instagram.com/akash.098p" target="_blank">
+  <img src="https://img.shields.io/badge/akash.098p-E4405F?style=flat&logo=instagram&logoColor=white"/>
+</a>
+
+<a href="mailto:akashpramanik098@gmail.com">
+  <img src="https://img.shields.io/badge/akashpramanik422%40gmail.com-D14836?style=flat&logo=gmail&logoColor=white"/>
+</a>
+</p>
+
+---

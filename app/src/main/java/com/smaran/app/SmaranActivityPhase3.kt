@@ -149,31 +149,43 @@ private fun SmaranPhase3(context: Context) {
             Box(Modifier.fillMaxSize().padding(padding)) {
                 if (notificationsOpen) {
                     NotificationCenter(context, tasks, history) { notificationsOpen = false }
-                } else when (tab) {
-                    0 -> HomePhase3Modern(
-                        tasks = tasks,
-                        onComplete = { complete(it, store, history, scheduler) { refresh++ } },
-                        onViewAll = { tab = 2 },
-                        onOpenProfile = { settingsProfileRequest++ ; tab = 4 },
-                        onOpenNotifications = { notificationsOpen = true }
-                    )
-                    1 -> CalendarPhase3(
-                        tasks = tasks,
-                        onAddTask = { date -> editor = null; editorDate = date; showEditor = true },
-                        onEditTask = { task -> editor = task; editorDate = task.date; showEditor = true }
-                    )
-                    2 -> TasksPhase3(
-                        tasks,
-                        add = { editor = null; editorDate = LocalDate.now(); showEditor = true },
-                        onEdit = { editor = it; showEditor = true },
-                        onComplete = { complete(it, store, history, scheduler) { refresh++ } },
-                        onDelete = { delete(it, store, scheduler, history) { refresh++ } }
-                    )
-                    3 -> StatisticsPhase3(tasks, history)
-                    else -> Settings(
-                        context,
-                        profileEditRequest = settingsProfileRequest
-                    ) { settingsVersion++ }
+                } else {
+                    AnimatedContent(
+                        targetState = tab,
+                        transitionSpec = {
+                            val direction = if (targetState > initialState) 1 else -1
+                            slideInHorizontally(animationSpec = tween(180)) { width -> width * direction } togetherWith
+                                slideOutHorizontally(animationSpec = tween(180)) { width -> -width * direction }
+                        },
+                        label = "menu_page_slide"
+                    ) { selectedTab ->
+                        when (selectedTab) {
+                            0 -> HomePhase3Modern(
+                                tasks = tasks,
+                                onComplete = { complete(it, store, history, scheduler) { refresh++ } },
+                                onViewAll = { tab = 2 },
+                                onOpenProfile = { settingsProfileRequest++ ; tab = 4 },
+                                onOpenNotifications = { notificationsOpen = true }
+                            )
+                            1 -> CalendarPhase3(
+                                tasks = tasks,
+                                onAddTask = { date -> editor = null; editorDate = date; showEditor = true },
+                                onEditTask = { task -> editor = task; editorDate = task.date; showEditor = true }
+                            )
+                            2 -> TasksPhase3(
+                                tasks,
+                                add = { editor = null; editorDate = LocalDate.now(); showEditor = true },
+                                onEdit = { editor = it; showEditor = true },
+                                onComplete = { complete(it, store, history, scheduler) { refresh++ } },
+                                onDelete = { delete(it, store, scheduler, history) { refresh++ } }
+                            )
+                            3 -> StatisticsPhase3(tasks, history)
+                            else -> Settings(
+                                context,
+                                profileEditRequest = settingsProfileRequest
+                            ) { settingsVersion++ }
+                        }
+                    }
                 }
             }
         }

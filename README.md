@@ -41,48 +41,41 @@ Smaran (स्मरण — *remembrance*) is a modern, lightweight, offline-fir
 
 ### Prerequisites
 
-- Android Studio (latest stable)
-- JDK 17+
+- **Android Studio** (latest stable)
+- **JDK 17+**
 
-### Build
+### Build & Install
 
 ```bash
+# Build the app
 ./gradlew assembleDebug
-```
 
-### Install
-
-```bash
+# Install on a connected device
 ./gradlew installDebug
 ```
+
+### Project Requirements
+
+- **Android SDK 26+** (min) / **35** (target)
+- **Java 17** compatibility
+- **Kotlin 2.0+** with Compose plugin
 
 ---
 
 ## 📁 Project Structure
 
 ```
-app/
-├── data/          # Room database, repositories, preferences
-├── domain/        # Models and use cases
-├── reminder/      # Alarm scheduling & notifications
-├── ui/            # Compose screens (home, add, details, calendar, …)
-├── navigation/
-└── theme/
+app/src/main/java/com/smaran/app/
+├── core/          # Navigation, constants, extensions, validation, result types
+├── data/          # Local storage, mappers, models, preferences, repositories
+├── domain/        # Domain models, use cases, repository interfaces
+├── home/          # Home screen (components, UI, view model)
+├── profile/       # Profile preferences
+├── reminder/      # Alarm scheduling, notifications, receivers, rescheduling
+├── settings/      # App, appearance, and reminder settings
+├── task/          # Task lifecycle (create, edit, delete, complete, snooze, reschedule, recurring)
+└── ui/            # Shared UI — history, task details
 ```
-
----
-
-## 🗺️ Roadmap
-
-- [x] Project foundation (Compose, Material 3, navigation)
-- [x] Task management (create, edit, delete, statuses)
-- [x] Reminder engine (snooze, reschedule, cancel)
-- [x] Room database & repository layer
-- [ ] Task history & timeline
-- [ ] Recurring tasks
-- [ ] Calendar & statistics
-- [ ] Backup & export
-- [ ] Polish (animations, accessibility, dark mode)
 
 ---
 

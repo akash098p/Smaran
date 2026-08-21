@@ -112,7 +112,20 @@ private fun SmaranPhase3(context: Context) {
 
     val colorScheme = if (useDynamic && Build.VERSION.SDK_INT >= 31) {
         if (isDark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-    } else if (isDark) darkColorScheme(primary = Purple, surface = Color(0xFF121212), background = Color(0xFF121212))
+    } else if (isDark) darkColorScheme(
+        primary = Color(0xFF9B7AFF),
+        onPrimary = Color(0xFF21114D),
+        primaryContainer = Color(0xFF35206B),
+        onPrimaryContainer = Color(0xFFEADDFF),
+        secondary = Color(0xFFFFB4C8),
+        surface = Color(0xFF17151F),
+        surfaceVariant = Color(0xFF24212D),
+        onSurface = Color(0xFFF3EFF7),
+        onSurfaceVariant = Color(0xFFC9C2D0),
+        outline = Color(0xFF625B6B),
+        background = Color(0xFF100F14),
+        onBackground = Color(0xFFF3EFF7)
+    )
     else lightColorScheme(primary = Purple, surface = Color.White, background = Background)
 
     MaterialTheme(colorScheme = colorScheme) {
@@ -197,7 +210,7 @@ private fun delete(task: Task, store: TaskStore, scheduler: ReminderScheduler, h
     LazyColumn(Modifier.fillMaxSize().padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp), contentPadding = PaddingValues(bottom = 80.dp)) {
         item {
             Column {
-                TypewriterText(greeting(), MaterialTheme.colorScheme.onSurfaceVariant, TextStyle(fontSize = 16.sp), repeat = true)
+                AnimatedGreeting(MaterialTheme.colorScheme.onSurfaceVariant, TextStyle(fontSize = 16.sp))
                 TypewriterText(name, MaterialTheme.colorScheme.onSurface, TextStyle(fontSize = 28.sp, fontWeight = FontWeight.Bold))
             }
         }
@@ -244,7 +257,7 @@ private fun delete(task: Task, store: TaskStore, scheduler: ReminderScheduler, h
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    TypewriterText(greeting(), MaterialTheme.colorScheme.onSurfaceVariant, TextStyle(fontSize = 16.sp), repeat = true)
+                    AnimatedGreeting(MaterialTheme.colorScheme.onSurfaceVariant, TextStyle(fontSize = 16.sp))
                     Text(name, color = MaterialTheme.colorScheme.onSurface, fontSize = 29.sp, fontWeight = FontWeight.Bold)
                 }
                 Spacer(Modifier.width(12.dp))
@@ -264,6 +277,7 @@ private fun delete(task: Task, store: TaskStore, scheduler: ReminderScheduler, h
             Card(
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 shape = RoundedCornerShape(18.dp),
+                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = .28f)),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(
@@ -271,7 +285,7 @@ private fun delete(task: Task, store: TaskStore, scheduler: ReminderScheduler, h
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(Modifier.weight(1f)) {
-                        Text("Current Streak", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                        Text("Current Streak 🔥", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
                         Text("Consecutive days with completed tasks.", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
                     }
                     Text(
@@ -642,7 +656,8 @@ private fun MagicNavigationBar(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(22.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = .28f))
             ) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                     Row(Modifier.fillMaxWidth()) {
@@ -702,6 +717,7 @@ private fun MagicNavigationBar(
                 Card(
                     shape = RoundedCornerShape(18.dp),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = .28f)),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(
@@ -799,16 +815,12 @@ private fun DayCell(
 
 @Composable
 private fun CalendarAgendaRow(task: Task, onClick: () -> Unit) {
-    val accent = when (task.category.lowercase()) {
-        "work" -> Color(0xFF6B4EFF)
-        "study" -> Color(0xFF3E82FF)
-        "health" -> Color(0xFF2BB673)
-        else -> Color(0xFFFFA847)
-    }
+    val accent = taskAccent(task.category)
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(18.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = .14f))
     ) {
         Row(
             modifier = Modifier
@@ -822,7 +834,7 @@ private fun CalendarAgendaRow(task: Task, onClick: () -> Unit) {
                 horizontalAlignment = Alignment.Start
             ) {
                 Text(task.time.format(DateTimeFormatter.ofPattern("hh:mm")), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface, fontSize = 14.sp)
-                Text(task.time.format(DateTimeFormatter.ofPattern("a")), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
+                Text(task.time.format(DateTimeFormatter.ofPattern("a")), color = accent, fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
             }
             Spacer(Modifier.width(10.dp))
             Box(
@@ -836,9 +848,9 @@ private fun CalendarAgendaRow(task: Task, onClick: () -> Unit) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
                     task.title,
-                    fontWeight = FontWeight.SemiBold,
+                    fontWeight = FontWeight.Bold,
                     color = if (task.completed) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
-                    fontSize = 14.sp
+                    fontSize = 15.sp
                 )
                 Box(
                     modifier = Modifier
@@ -905,7 +917,12 @@ private fun CalendarAgendaRow(task: Task, onClick: () -> Unit) {
 
             if (visible.isEmpty()) {
                 item {
-                    Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), modifier = Modifier.fillMaxWidth()) {
+                    Card(
+                        shape = RoundedCornerShape(18.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = .14f)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
                         Column(
                             Modifier
                                 .fillMaxWidth()
@@ -964,12 +981,12 @@ private fun SearchBar(query: String, onQueryChange: (String) -> Unit) {
         placeholder = { Text("Search tasks...") },
         leadingIcon = { Icon(Icons.Default.Search, null) },
         trailingIcon = { Icon(Icons.Default.FilterList, null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
-        shape = RoundedCornerShape(18.dp),
+        shape = RoundedCornerShape(20.dp),
         colors = OutlinedTextFieldDefaults.colors(
             focusedContainerColor = MaterialTheme.colorScheme.surface,
             unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-            focusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = .22f),
-            unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = .14f),
+            focusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = .70f),
+            unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = .28f),
             focusedTextColor = MaterialTheme.colorScheme.onSurface,
             unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
             focusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -988,14 +1005,14 @@ private fun TaskFilterRow(filter: String, onFilterChange: (String) -> Unit) {
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(999.dp))
-                    .background(if (selected) Purple else MaterialTheme.colorScheme.surface)
-                    .border(1.dp, if (selected) Purple else MaterialTheme.colorScheme.outline.copy(alpha = .14f), RoundedCornerShape(999.dp))
+                    .background(if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant)
+                    .border(1.dp, if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = .24f), RoundedCornerShape(999.dp))
                     .clickable { onFilterChange(value) }
                     .padding(horizontal = 15.dp, vertical = 10.dp)
             ) {
                 Text(
                     text = value,
-                    color = if (selected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.SemiBold
                 )
@@ -1015,16 +1032,12 @@ private fun formatTaskSection(date: LocalDate, today: LocalDate): String {
 
 @Composable
 private fun TaskTaskCard(task: Task, onEdit: (Task) -> Unit, onComplete: (Task) -> Unit, onDelete: (Task) -> Unit) {
-    val accent = when (task.category.lowercase()) {
-        "work" -> Color(0xFF6B4EFF)
-        "study" -> Color(0xFF3E82FF)
-        "health" -> Color(0xFF2BB673)
-        else -> Color(0xFFFFA847)
-    }
+    val accent = taskAccent(task.category)
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(18.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = .14f))
     ) {
         Row(
             modifier = Modifier
@@ -1045,8 +1058,8 @@ private fun TaskTaskCard(task: Task, onEdit: (Task) -> Unit, onComplete: (Task) 
                 Text(
                     text = task.title,
                     color = MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 14.sp
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 15.sp
                 )
                 Text(
                     text = task.time.format(DateTimeFormatter.ofPattern("hh:mm a")),
@@ -1129,6 +1142,7 @@ private fun TaskTaskCard(task: Task, onEdit: (Task) -> Unit, onComplete: (Task) 
             Card(
                 shape = RoundedCornerShape(22.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary),
+                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.onPrimary.copy(alpha = .22f)),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(Modifier.padding(18.dp)) {
@@ -1165,6 +1179,7 @@ private fun TaskTaskCard(task: Task, onEdit: (Task) -> Unit, onComplete: (Task) 
             Card(
                 shape = RoundedCornerShape(22.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = .28f)),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(
@@ -1191,6 +1206,7 @@ private fun TaskTaskCard(task: Task, onEdit: (Task) -> Unit, onComplete: (Task) 
             Card(
                 shape = RoundedCornerShape(22.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = .28f)),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -1208,6 +1224,7 @@ private fun TaskTaskCard(task: Task, onEdit: (Task) -> Unit, onComplete: (Task) 
             Card(
                 shape = RoundedCornerShape(22.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = .28f)),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -1237,13 +1254,45 @@ private fun TaskTaskCard(task: Task, onEdit: (Task) -> Unit, onComplete: (Task) 
 }
 
 @Composable private fun TaskRowPhase3(task: Task, onComplete: ((Task) -> Unit)?, onEdit: ((Task) -> Unit)?, onDelete: ((Task) -> Unit)?) {
-    Card(shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), modifier = Modifier.fillMaxWidth().clickable(enabled = onEdit != null) { onEdit?.invoke(task) }) { Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) { Column(Modifier.weight(1f)) { Text(task.title, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface); Text("${task.date} · ${task.time.format(DateTimeFormatter.ofPattern("hh:mm a"))}", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp); Text("${task.category} · ${task.priority.name.lowercase()}", color = MaterialTheme.colorScheme.primary, fontSize = 10.sp) }; if(onComplete != null) IconButton({ onComplete(task) }) { Icon(Icons.Default.CheckCircle, "Complete", tint = MaterialTheme.colorScheme.primary) }; if(onDelete != null) IconButton({ onDelete(task) }) { Icon(Icons.Default.DeleteOutline, "Delete", tint = Color.Red) } else if(task.completed) Icon(Icons.Default.Check, "Done", tint = Color(0xFF27A96B)) } }
+    val accent = taskAccent(task.category)
+    Card(
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = .16f)),
+        modifier = Modifier.fillMaxWidth().clickable(enabled = onEdit != null) { onEdit?.invoke(task) }
+    ) {
+        Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.width(4.dp).height(48.dp).clip(CircleShape).background(accent))
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(task.title, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface, fontSize = 15.sp)
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Icon(Icons.Default.Schedule, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(14.dp))
+                    Text(task.time.format(DateTimeFormatter.ofPattern("hh:mm a")), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
+                    Text("·", color = MaterialTheme.colorScheme.outline)
+                    Text(task.category, color = accent, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                }
+                Text(task.priority.name.lowercase().replaceFirstChar { it.uppercase() } + " priority", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
+            }
+            if (onComplete != null) IconButton({ onComplete(task) }) { Icon(Icons.Default.CheckCircle, "Complete", tint = accent) }
+            if (onDelete != null) IconButton({ onDelete(task) }) { Icon(Icons.Default.DeleteOutline, "Delete", tint = MaterialTheme.colorScheme.error) }
+            else if (task.completed) Icon(Icons.Default.Check, "Done", tint = Color(0xFF55D68A))
+        }
+    }
+}
+
+private fun taskAccent(category: String): Color = when (category.lowercase()) {
+    "work" -> Color(0xFF8B7CFF)
+    "study" -> Color(0xFF58B9FF)
+    "health" -> Color(0xFF55D68A)
+    else -> Color(0xFFFFB45E)
 }
 
 @Composable private fun StatTile(label: String, value: String, modifier: Modifier, highlight: Boolean = false) {
     Card(
         modifier = modifier,
         shape = RoundedCornerShape(18.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = .28f)),
         colors = CardDefaults.cardColors(containerColor = if (highlight) MaterialTheme.colorScheme.primary.copy(alpha = .08f) else MaterialTheme.colorScheme.surface)
     ) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -1354,7 +1403,7 @@ private fun completionHeadline(rate: Int): String = when (rate) {
     in 25..49 -> "Good momentum"
     in 50..74 -> "Solid progress"
     in 75..99 -> "Excellent work"
-    else -> "Perfect week"
+    else -> "Perfect week 🎉"
 }
 
 private fun completionBody(rate: Int): String = when (rate) {
@@ -1413,6 +1462,54 @@ private fun PriorityChip(label: String, selected: Boolean, accent: Color, onClic
                 .background(accent)
         )
         Text(label, color = textColor, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+    }
+}
+
+@Composable
+private fun AnimatedGreeting(color: Color, style: TextStyle) {
+    val greetingText = greeting().substringBefore("👋").trimEnd()
+    var visibleText by remember(greetingText) { mutableStateOf("") }
+    var shakeStep by remember(greetingText) { mutableIntStateOf(0) }
+    val rotation by animateFloatAsState(
+        targetValue = when (shakeStep % 4) {
+            1 -> 18f
+            2 -> -18f
+            3 -> 10f
+            else -> 0f
+        },
+        animationSpec = tween(durationMillis = 90),
+        label = "greeting_wave_rotation"
+    )
+
+    LaunchedEffect(greetingText) {
+        while (true) {
+            repeat(3) {
+                shakeStep++
+                kotlinx.coroutines.delay(100L)
+            }
+            shakeStep++
+            visibleText = ""
+            greetingText.forEach { char ->
+                visibleText += char
+                kotlinx.coroutines.delay(50L)
+            }
+            kotlinx.coroutines.delay(2200L)
+            repeat(4) {
+                shakeStep++
+                kotlinx.coroutines.delay(100L)
+            }
+            kotlinx.coroutines.delay(1800L)
+        }
+    }
+
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(text = visibleText, color = color, style = style)
+        Text(
+            text = "👋",
+            color = color,
+            style = style,
+            modifier = Modifier.graphicsLayer(rotationZ = rotation)
+        )
     }
 }
 

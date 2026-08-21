@@ -4,6 +4,8 @@ package com.smaran.app.settings
 data class SettingsUiState(
     val soundEnabled: Boolean,
     val vibrationEnabled: Boolean,
+    val alarmStyleEnabled: Boolean,
+    val customSoundUri: String,
     val defaultSnoozeMinutes: Int,
     val darkMode: Boolean,
     val dynamicColor: Boolean

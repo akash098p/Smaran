@@ -908,7 +908,7 @@ private fun CalendarAgendaRow(task: Task, onClick: () -> Unit) {
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(18.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = .14f))
+        border = androidx.compose.foundation.BorderStroke(1.dp, accent.copy(alpha = .45f))
     ) {
         Row(
             modifier = Modifier
@@ -940,13 +940,10 @@ private fun CalendarAgendaRow(task: Task, onClick: () -> Unit) {
                     color = if (task.completed) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
                     fontSize = 15.sp
                 )
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(999.dp))
-                        .background(accent.copy(alpha = .12f))
-                        .padding(horizontal = 10.dp, vertical = 5.dp)
-                ) {
-                    Text(task.category, color = accent, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    TaskCategoryPill(task.category, accent)
+                    Text("·", color = MaterialTheme.colorScheme.outline)
+                    Text(task.priority.name.lowercase().replaceFirstChar { it.uppercase() } + " priority", color = priorityColor(task.priority), fontSize = 10.sp)
                 }
             }
             if (task.completed) {
@@ -1125,7 +1122,7 @@ private fun TaskTaskCard(task: Task, onEdit: (Task) -> Unit, onComplete: (Task) 
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(18.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = .14f))
+        border = androidx.compose.foundation.BorderStroke(1.dp, accent.copy(alpha = .45f))
     ) {
         Row(
             modifier = Modifier
@@ -1134,14 +1131,6 @@ private fun TaskTaskCard(task: Task, onEdit: (Task) -> Unit, onComplete: (Task) 
                 .padding(14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(
-                modifier = Modifier
-                    .width(3.dp)
-                    .height(46.dp)
-                    .clip(RoundedCornerShape(999.dp))
-                    .background(accent)
-            )
-            Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(
                     text = task.title,
@@ -1149,24 +1138,16 @@ private fun TaskTaskCard(task: Task, onEdit: (Task) -> Unit, onComplete: (Task) 
                     fontWeight = FontWeight.Bold,
                     fontSize = 15.sp
                 )
-                Text(
-                    text = task.time.format(DateTimeFormatter.ofPattern("hh:mm a")),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 12.sp
-                )
-                Spacer(Modifier.height(4.dp))
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(999.dp))
-                        .background(accent.copy(alpha = .12f))
-                        .padding(horizontal = 10.dp, vertical = 5.dp)
-                ) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(
-                        text = task.category,
-                        color = accent,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.SemiBold
+                        text = task.time.format(DateTimeFormatter.ofPattern("hh:mm a")),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 12.sp
                     )
+                    Text("·", color = MaterialTheme.colorScheme.outline)
+                    TaskCategoryPill(task.category, accent)
+                    Text("·", color = MaterialTheme.colorScheme.outline)
+                    Text(task.priority.name.lowercase().replaceFirstChar { it.uppercase() } + " priority", color = priorityColor(task.priority), fontSize = 10.sp)
                 }
             }
             IconButton(onClick = { if (!task.completed) onComplete(task) }) {
@@ -1346,21 +1327,20 @@ private fun TaskTaskCard(task: Task, onEdit: (Task) -> Unit, onComplete: (Task) 
     Card(
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = .16f)),
+        border = androidx.compose.foundation.BorderStroke(1.dp, accent.copy(alpha = .45f)),
         modifier = Modifier.fillMaxWidth().clickable(enabled = onEdit != null) { onEdit?.invoke(task) }
     ) {
         Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.width(4.dp).height(48.dp).clip(CircleShape).background(accent))
-            Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(task.title, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface, fontSize = 15.sp)
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     Icon(Icons.Default.Schedule, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(14.dp))
                     Text(task.time.format(DateTimeFormatter.ofPattern("hh:mm a")), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
                     Text("·", color = MaterialTheme.colorScheme.outline)
-                    Text(task.category, color = accent, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                    TaskCategoryPill(task.category, accent)
+                    Text("·", color = MaterialTheme.colorScheme.outline)
+                    Text(task.priority.name.lowercase().replaceFirstChar { it.uppercase() } + " priority", color = priorityColor(task.priority), fontSize = 10.sp)
                 }
-                Text(task.priority.name.lowercase().replaceFirstChar { it.uppercase() } + " priority", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
             }
             if (onComplete != null) IconButton({ onComplete(task) }) { Icon(Icons.Default.CheckCircle, "Complete", tint = accent) }
             if (onDelete != null) IconButton({ onDelete(task) }) { Icon(Icons.Default.DeleteOutline, "Delete", tint = MaterialTheme.colorScheme.error) }
@@ -1374,6 +1354,24 @@ private fun taskAccent(category: String): Color = when (category.lowercase()) {
     "study" -> Color(0xFF58B9FF)
     "health" -> Color(0xFF55D68A)
     else -> Color(0xFFFFB45E)
+}
+
+private fun priorityColor(priority: Priority): Color = when (priority) {
+    Priority.LOW -> PriorityLowColor
+    Priority.MEDIUM -> PriorityMediumColor
+    Priority.HIGH -> PriorityHighColor
+}
+
+@Composable
+private fun TaskCategoryPill(category: String, accent: Color) {
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(999.dp))
+            .background(accent.copy(alpha = .12f))
+            .padding(horizontal = 10.dp, vertical = 4.dp)
+    ) {
+        Text(category, color = accent, fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
+    }
 }
 
 @Composable private fun StatTile(label: String, value: String, modifier: Modifier, highlight: Boolean = false) {

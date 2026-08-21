@@ -4,8 +4,6 @@
 
 Smaran (स्मरण — *remembrance*) is a modern, lightweight, offline-first Android task reminder app. It helps you create tasks, receive reliable reminders, snooze or reschedule unfinished work, and keep a complete history of your productivity.
 
-> A task should have a history, not just a checkbox.
-
 ---
 
 ## ✨ Features

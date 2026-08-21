@@ -14,6 +14,11 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.Image
@@ -420,38 +425,81 @@ private fun NamePanel(nameInput: String, onNameChange: (String) -> Unit) {
                 lineHeight = 17.sp
             )
             Spacer(Modifier.height(14.dp))
-            OutlinedTextField(
-                value = nameInput,
-                onValueChange = onNameChange,
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                shape = RoundedCornerShape(18.dp),
-                label = { Text("Your name") },
-                placeholder = { Text("e.g. Akash") },
-                leadingIcon = {
-                    androidx.compose.material3.Icon(
-                        imageVector = Icons.Default.Person,
-                        contentDescription = null,
-                        tint = OnboardingPurple
-                    )
-                },
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                keyboardActions = KeyboardActions(onDone = { }),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White,
-                    focusedContainerColor = Color.White.copy(alpha = 0.04f),
-                    unfocusedContainerColor = Color.White.copy(alpha = 0.03f),
-                    focusedBorderColor = OnboardingPurpleSoft,
-                    unfocusedBorderColor = Color.White.copy(alpha = 0.16f),
-                    cursorColor = OnboardingPurple,
-                    focusedLabelColor = OnboardingPurple,
-                    unfocusedLabelColor = OnboardingMuted,
-                    focusedPlaceholderColor = OnboardingMuted.copy(alpha = 0.85f),
-                    unfocusedPlaceholderColor = OnboardingMuted.copy(alpha = 0.85f)
-                )
-            )
+            NameInputField(nameInput, onNameChange)
         }
+    }
+}
+
+@Composable
+private fun NameInputField(value: String, onValueChange: (String) -> Unit) {
+    val shape = RoundedCornerShape(18.dp)
+    val isEmpty = value.isBlank()
+    val transition = rememberInfiniteTransition(label = "name_input_border")
+    val shimmerPosition by transition.animateFloat(
+        initialValue = -0.85f,
+        targetValue = 0.85f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1800, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "name_input_shimmer"
+    )
+    val field = @Composable {
+        OutlinedTextField(
+            value = value,
+            onValueChange = onValueChange,
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            shape = shape,
+            label = { Text("Your name") },
+            placeholder = { Text("e.g. Akash") },
+            leadingIcon = {
+                androidx.compose.material3.Icon(
+                    imageVector = Icons.Default.Person,
+                    contentDescription = null,
+                    tint = OnboardingPurple
+                )
+            },
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+            keyboardActions = KeyboardActions(onDone = { }),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedTextColor = Color.White,
+                unfocusedTextColor = Color.White,
+                focusedContainerColor = Color.Transparent,
+                unfocusedContainerColor = Color.Transparent,
+                focusedBorderColor = if (isEmpty) Color.Transparent else OnboardingPurpleSoft,
+                unfocusedBorderColor = if (isEmpty) Color.Transparent else Color.White.copy(alpha = 0.16f),
+                cursorColor = OnboardingPurple,
+                focusedLabelColor = OnboardingPurple,
+                unfocusedLabelColor = OnboardingMuted,
+                focusedPlaceholderColor = OnboardingMuted.copy(alpha = 0.85f),
+                unfocusedPlaceholderColor = OnboardingMuted.copy(alpha = 0.85f)
+            )
+        )
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color.White.copy(alpha = 0.03f), shape)
+            .border(
+                1.5.dp,
+                if (isEmpty) Brush.linearGradient(
+                    colors = listOf(
+                        OnboardingPurpleSoft.copy(alpha = 0.35f),
+                        Color.White.copy(alpha = 0.9f),
+                        OnboardingPurpleSoft.copy(alpha = 0.35f)
+                    ),
+                    start = androidx.compose.ui.geometry.Offset(shimmerPosition * 360f, 0f),
+                    end = androidx.compose.ui.geometry.Offset(shimmerPosition * 360f + 240f, 120f)
+                ) else Brush.linearGradient(
+                    colors = listOf(Color.Transparent, Color.Transparent)
+                ),
+                shape
+            )
+            .padding(1.dp)
+    ) {
+        field()
     }
 }
 

@@ -1,4 +1,4 @@
-# 🧠 Smaran
+<img width="1030" height="617" alt="image" src="https://github.com/user-attachments/assets/ab4dae9b-e180-41d0-b1df-990249dda6e5" /># 🧠 Smaran
 
 **Remember. Act. Complete.**
 
@@ -16,6 +16,16 @@ Smaran (स्मरण — *remembrance*) is a modern, lightweight, offline-fir
 - 📊 **Productivity insights** — completion rates, streaks, and statistics
 - 📴 **Offline-first** — no account, no cloud, no internet required
 - 🔐 **Privacy-focused** — all data stays on-device
+
+---
+
+## 📹 Live Demo
+
+<p align="center">
+  <img src="" width="48%">
+  <img src="" width="48%">
+</p>
+
 
 ---
 

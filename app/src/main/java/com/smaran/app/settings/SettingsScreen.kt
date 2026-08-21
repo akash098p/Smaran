@@ -184,7 +184,7 @@ private fun ProfileEditor(profile: ProfilePreferences, onSaved: () -> Unit, onBa
         }
         item {
             Button(onClick = {
-                profile.name = name.trim().ifBlank { "Akash" }
+                profile.name = name.trim().ifBlank { "User" }
                 profile.email = email.trim()
                 profile.age = age.trim()
                 profile.profileImageUri = imageUri

@@ -102,7 +102,7 @@ private fun SmaranPhase3(context: Context) {
     var showEditor by remember { mutableStateOf(false) }
     var editorDate by remember { mutableStateOf(LocalDate.now()) }
     var settingsProfileRequest by rememberSaveable { mutableIntStateOf(0) }
-    var settingsNotificationRequest by rememberSaveable { mutableIntStateOf(0) }
+    var notificationsOpen by rememberSaveable { mutableStateOf(false) }
     var tab by rememberSaveable { mutableIntStateOf(0) }
     val tasks = remember(refresh) { store.getTasks() }
     val appearancePrefs = remember { AppearancePreferences(context) }
@@ -147,13 +147,15 @@ private fun SmaranPhase3(context: Context) {
             }
         ) { padding ->
             Box(Modifier.fillMaxSize().padding(padding)) {
-                when (tab) {
+                if (notificationsOpen) {
+                    NotificationCenter(context, tasks, history) { notificationsOpen = false }
+                } else when (tab) {
                     0 -> HomePhase3Modern(
                         tasks = tasks,
                         onComplete = { complete(it, store, history, scheduler) { refresh++ } },
                         onViewAll = { tab = 2 },
                         onOpenProfile = { settingsProfileRequest++ ; tab = 4 },
-                        onOpenNotifications = { settingsNotificationRequest++ ; tab = 4 }
+                        onOpenNotifications = { notificationsOpen = true }
                     )
                     1 -> CalendarPhase3(
                         tasks = tasks,
@@ -170,8 +172,7 @@ private fun SmaranPhase3(context: Context) {
                     3 -> StatisticsPhase3(tasks, history)
                     else -> Settings(
                         context,
-                        profileEditRequest = settingsProfileRequest,
-                        notificationsRequest = settingsNotificationRequest
+                        profileEditRequest = settingsProfileRequest
                     ) { settingsVersion++ }
                 }
             }
@@ -416,6 +417,93 @@ private fun HomeFeatureCarousel() {
                                     .clip(CircleShape)
                                     .background(if (index == slideIndex) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.30f))
                             )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun NotificationCenter(context: Context, tasks: List<Task>, history: HistoryStore, onBack: () -> Unit) {
+    var historyVersion by rememberSaveable { mutableIntStateOf(0) }
+    val events = remember(historyVersion, tasks) { history.getAll().take(30) }
+    val taskTitles = remember(tasks) { tasks.associateBy { it.id }.mapValues { it.value.title } }
+
+    LazyColumn(
+        Modifier.fillMaxSize().padding(horizontal = 18.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+        contentPadding = PaddingValues(top = 12.dp, bottom = 100.dp)
+    ) {
+        item {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Back") }
+                Text("Notifications", fontSize = 27.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                if (events.isNotEmpty()) {
+                    TextButton(onClick = {
+                        history.clear()
+                        context.getSystemService(android.app.NotificationManager::class.java).cancelAll()
+                        historyVersion++
+                    }) {
+                        Text("Clear", color = MaterialTheme.colorScheme.primary)
+                    }
+                }
+            }
+        }
+        if (events.isEmpty()) {
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = .28f))
+                ) {
+                    Column(
+                        Modifier.fillMaxWidth().padding(28.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(Icons.Default.NotificationsNone, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(32.dp))
+                        Text("No notifications", fontWeight = FontWeight.Bold)
+                        Text("Reminder activity will appear here.", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
+                    }
+                }
+            }
+        } else {
+            items(events, key = { it.id }) { event ->
+                val accent = when (event.action) {
+                    HistoryAction.COMPLETED -> Color(0xFF55D68A)
+                    HistoryAction.SNOOZED, HistoryAction.RESCHEDULED -> Color(0xFFFFB45E)
+                    HistoryAction.REMINDER_TRIGGERED -> MaterialTheme.colorScheme.primary
+                    else -> MaterialTheme.colorScheme.onSurfaceVariant
+                }
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(18.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = .24f))
+                ) {
+                    Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Box(Modifier.size(40.dp).clip(CircleShape).background(accent.copy(alpha = .14f)), contentAlignment = Alignment.Center) {
+                            Icon(
+                                when (event.action) {
+                                    HistoryAction.COMPLETED -> Icons.Default.Check
+                                    HistoryAction.SNOOZED -> Icons.Default.Snooze
+                                    HistoryAction.RESCHEDULED -> Icons.Default.Schedule
+                                    HistoryAction.REMINDER_TRIGGERED -> Icons.Default.NotificationsActive
+                                    else -> Icons.Default.EventNote
+                                },
+                                null,
+                                tint = accent,
+                                modifier = Modifier.size(21.dp)
+                            )
+                        }
+                        Spacer(Modifier.width(12.dp))
+                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                            Text(event.action.name.lowercase().replaceFirstChar { it.uppercase() }, fontWeight = FontWeight.Bold)
+                            Text(taskTitles[event.taskId] ?: "Task reminder", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+                            Text(event.timestamp.format(DateTimeFormatter.ofPattern("dd MMM · hh:mm a")), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
                         }
                     }
                 }

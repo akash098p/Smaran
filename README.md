@@ -22,9 +22,11 @@ Smaran (स्मरण — *remembrance*) is a modern, lightweight, offline-fir
 ## 📹 Live Demo
 
 <p align="center">
-  <img src="" width="48%">
-  <img src="" width="48%">
+  <img src="https://github.com/user-attachments/assets/c56fdedd-3014-46a5-97b3-c9ee303df9b5" width="50%">
+  <img src="https://github.com/user-attachments/assets/5d6e8eb1-67ba-41ae-abcc-f665eca46959" width="50%">
 </p>
+
+
 
 
 ---

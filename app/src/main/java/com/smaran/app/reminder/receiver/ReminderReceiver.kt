@@ -1,5 +1,6 @@
 package com.smaran.app.reminder.receiver
 
+import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -91,6 +92,7 @@ class ReminderReceiver : BroadcastReceiver() {
         }
         val channel = NotificationChannel(channelId, "Smaran Reminders", NotificationManager.IMPORTANCE_HIGH).apply {
             description = "Task reminder alerts"
+            lockscreenVisibility = Notification.VISIBILITY_PUBLIC
             enableVibration(prefs.vibrationEnabled)
             if (!prefs.soundEnabled || alarmMode) {
                 setSound(null, null)
@@ -110,6 +112,9 @@ class ReminderReceiver : BroadcastReceiver() {
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle("Reminder: $title")
             .setContentText(if (snoozedFor == null) "It's time for your task." else "Reminded again in $snoozedFor minutes.")
+            .setCategory(NotificationCompat.CATEGORY_ALARM)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setShowWhen(true)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
             .setContentIntent(openIntent)

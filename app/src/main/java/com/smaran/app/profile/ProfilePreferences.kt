@@ -6,7 +6,7 @@ class ProfilePreferences(context: Context) {
     private val prefs = context.getSharedPreferences("smaran_profile", Context.MODE_PRIVATE)
 
     var name: String
-        get() = prefs.getString(KEY_NAME, "Akash") ?: "Akash"
+        get() = prefs.getString(KEY_NAME, "User") ?: "User"
         set(value) = prefs.edit().putString(KEY_NAME, value).apply()
 
     var email: String

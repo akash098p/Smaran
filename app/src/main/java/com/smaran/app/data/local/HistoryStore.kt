@@ -41,6 +41,10 @@ class HistoryStore(context: Context) {
     fun hasActionSince(taskId: Long, action: HistoryAction, since: LocalDateTime): Boolean =
         getAll().any { it.taskId == taskId && it.action == action && it.timestamp.isAfter(since) }
 
+    fun clear() {
+        prefs.edit().putString(KEY_HISTORY, "[]").apply()
+    }
+
     private fun save(events: List<TaskHistory>) {
         val array = JSONArray()
         events.forEach { e ->

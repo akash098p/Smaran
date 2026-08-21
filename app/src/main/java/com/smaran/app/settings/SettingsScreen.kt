@@ -84,7 +84,7 @@ fun Settings(context: Context, profileEditRequest: Int = 0, notificationsRequest
     LazyColumn(Modifier.fillMaxSize().padding(horizontal = 20.dp), contentPadding = PaddingValues(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item { Text("Settings", fontSize = 27.sp, fontWeight = FontWeight.Bold, color = colorScheme.onBackground) }
         item {
-            Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = colorScheme.surface), modifier = Modifier.fillMaxWidth().clickable { page = "Profile" }) {
+            Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = colorScheme.surface), border = androidx.compose.foundation.BorderStroke(1.dp, colorScheme.outline.copy(alpha = .28f)), modifier = Modifier.fillMaxWidth().clickable { page = "Profile" }) {
                 Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                     ProfileAvatar(currentName, currentImage, 58)
                     Spacer(Modifier.width(14.dp))
@@ -97,7 +97,7 @@ fun Settings(context: Context, profileEditRequest: Int = 0, notificationsRequest
             }
         }
         item {
-            Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = colorScheme.surface), modifier = Modifier.fillMaxWidth()) {
+            Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = colorScheme.surface), border = androidx.compose.foundation.BorderStroke(1.dp, colorScheme.outline.copy(alpha = .28f)), modifier = Modifier.fillMaxWidth()) {
                 Column {
                     entries.forEachIndexed { index, entry ->
                         SettingsItem(entry) { page = entry.title }
@@ -163,7 +163,7 @@ private fun ProfileEditor(profile: ProfilePreferences, onSaved: () -> Unit, onBa
     LazyColumn(Modifier.fillMaxSize().padding(horizontal = 20.dp), contentPadding = PaddingValues(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         item { Row(verticalAlignment = Alignment.CenterVertically) { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Back", tint = colorScheme.onSurface) }; Text("Profile", fontSize = 25.sp, fontWeight = FontWeight.Bold, color = colorScheme.onSurface) } }
         item {
-            Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = colorScheme.surface), modifier = Modifier.fillMaxWidth()) {
+            Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = colorScheme.surface), border = androidx.compose.foundation.BorderStroke(1.dp, colorScheme.outline.copy(alpha = .28f)), modifier = Modifier.fillMaxWidth()) {
                 Column(Modifier.fillMaxWidth().padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     ProfileAvatar(name, imageUri, 96)
                     Spacer(Modifier.height(10.dp))
@@ -173,7 +173,7 @@ private fun ProfileEditor(profile: ProfilePreferences, onSaved: () -> Unit, onBa
             }
         }
         item {
-            Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = colorScheme.surface), modifier = Modifier.fillMaxWidth()) {
+            Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = colorScheme.surface), border = androidx.compose.foundation.BorderStroke(1.dp, colorScheme.outline.copy(alpha = .28f)), modifier = Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     OutlinedTextField(name, { name = it }, Modifier.fillMaxWidth(), singleLine = true, label = { Text("Name") }, leadingIcon = { Icon(Icons.Default.Person, null) })
                     OutlinedTextField(email, { email = it }, Modifier.fillMaxWidth(), singleLine = true, label = { Text("Email") }, leadingIcon = { Icon(Icons.Default.Email, null) })
@@ -199,7 +199,7 @@ private fun SettingsDetailPage(title: String, state: SettingsUiState, manager: S
     LazyColumn(Modifier.fillMaxSize().padding(horizontal = 20.dp), contentPadding = PaddingValues(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item { Row(verticalAlignment = Alignment.CenterVertically) { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Back", tint = colorScheme.onSurface) }; Text(title, fontSize = 25.sp, fontWeight = FontWeight.Bold, color = colorScheme.onSurface) } }
         item {
-            Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = colorScheme.surface), modifier = Modifier.fillMaxWidth()) {
+            Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = colorScheme.surface), border = androidx.compose.foundation.BorderStroke(1.dp, colorScheme.outline.copy(alpha = .28f)), modifier = Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     when (title) {
                         "Reminders" -> {

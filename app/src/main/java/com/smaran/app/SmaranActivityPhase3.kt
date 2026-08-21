@@ -8,8 +8,13 @@ import android.graphics.BitmapFactory
 import android.os.Build
 import android.os.Bundle
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.AnimatedContent
@@ -287,12 +292,7 @@ private fun delete(task: Task, store: TaskStore, scheduler: ReminderScheduler, h
         }
         item { HomeFeatureCarousel() }
         item {
-            Card(
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                shape = RoundedCornerShape(18.dp),
-                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = .28f)),
-                modifier = Modifier.fillMaxWidth()
-            ) {
+            ElectricBorderCard {
                 Row(
                     Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
                     verticalAlignment = Alignment.CenterVertically
@@ -326,6 +326,88 @@ private fun delete(task: Task, store: TaskStore, scheduler: ReminderScheduler, h
         }
         if (list.isEmpty()) item { Text("No tasks today. Tap + to create a reminder.", color = MaterialTheme.colorScheme.onSurfaceVariant) }
         items(list) { TaskRowPhase3(it, if (!it.completed) onComplete else null, null, null) }
+    }
+}
+
+@Composable
+private fun CompletionRateCard(rate: Int, content: @Composable ColumnScope.() -> Unit) {
+    if (rate == 100) {
+        ElectricBorderCard(shape = RoundedCornerShape(22.dp), content = content)
+    } else {
+        Card(
+            shape = RoundedCornerShape(22.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = .28f)),
+            modifier = Modifier.fillMaxWidth(),
+            content = content
+        )
+    }
+}
+
+@Composable
+private fun ElectricBorderCard(shape: RoundedCornerShape = RoundedCornerShape(18.dp), content: @Composable ColumnScope.() -> Unit) {
+    val transition = rememberInfiniteTransition(label = "electric_border")
+    val pulse by transition.animateFloat(
+        initialValue = 0.35f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1800, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "electric_border_pulse"
+    )
+    val shimmer by transition.animateFloat(
+        initialValue = -1f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(6000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "electric_border_shimmer"
+    )
+    val electric = Color(0xFFDD8448)
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .background(
+                Brush.linearGradient(
+                    colors = listOf(
+                        electric.copy(alpha = 0.18f),
+                        Color.Transparent,
+                        electric.copy(alpha = 0.18f)
+                    ),
+                    start = androidx.compose.ui.geometry.Offset(shimmer * 500f, 0f),
+                    end = androidx.compose.ui.geometry.Offset(shimmer * 500f + 500f, 220f)
+                )
+            )
+            .padding(2.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(shape)
+                .background(MaterialTheme.colorScheme.surface)
+        ) {
+            Box(
+                Modifier
+                    .matchParentSize()
+                    .clip(shape)
+                    .border(1.dp, electric.copy(alpha = 0.35f + pulse * 0.25f), shape)
+                    .graphicsLayer(alpha = pulse)
+            )
+            Box(
+                Modifier
+                    .matchParentSize()
+                    .clip(shape)
+                    .border(1.dp, Color.White.copy(alpha = pulse * 0.28f), shape)
+                    .graphicsLayer(alpha = pulse * 0.7f)
+            )
+            Column(Modifier.fillMaxWidth()) {
+                content()
+            }
+        }
     }
 }
 
@@ -1257,12 +1339,7 @@ private fun TaskTaskCard(task: Task, onEdit: (Task) -> Unit, onComplete: (Task) 
         }
 
         item {
-            Card(
-                shape = RoundedCornerShape(22.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = .28f)),
-                modifier = Modifier.fillMaxWidth()
-            ) {
+            CompletionRateCard(rate) {
                 Row(
                     Modifier.padding(18.dp),
                     verticalAlignment = Alignment.CenterVertically,

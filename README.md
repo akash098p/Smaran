@@ -1,4 +1,4 @@
-<img width="1030" height="617" alt="image" src="https://github.com/user-attachments/assets/ab4dae9b-e180-41d0-b1df-990249dda6e5" /># 🧠 Smaran
+# 🧠 Smaran
 
 **Remember. Act. Complete.**
 

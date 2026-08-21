@@ -13,6 +13,7 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.Image
@@ -46,7 +47,9 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -55,6 +58,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -453,16 +457,36 @@ private fun NamePanel(nameInput: String, onNameChange: (String) -> Unit) {
 
 @Composable
 private fun ChipRow(items: List<String>, accent: Color) {
+    var glowingIndex by remember(items) { mutableIntStateOf(0) }
+
+    LaunchedEffect(items) {
+        while (true) {
+            kotlinx.coroutines.delay(900L)
+            glowingIndex = (glowingIndex + 1) % items.size
+        }
+    }
+
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        items.forEach { item ->
+        items.forEachIndexed { index, item ->
+            val glow by animateFloatAsState(
+                targetValue = if (index == glowingIndex) 1f else 0f,
+                animationSpec = tween(280),
+                label = "onboarding_chip_glow_$index"
+            )
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(999.dp))
-                    .background(accent.copy(alpha = 0.12f))
-                    .border(1.dp, accent.copy(alpha = 0.22f), RoundedCornerShape(999.dp))
+                    .background(accent.copy(alpha = 0.12f + glow * 0.24f))
+                    .border(1.dp, accent.copy(alpha = 0.22f + glow * 0.58f), RoundedCornerShape(999.dp))
+                    .graphicsLayer(alpha = 0.82f + glow * 0.18f)
                     .padding(horizontal = 12.dp, vertical = 8.dp)
             ) {
-                Text(text = item, color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Medium)
+                Text(
+                    text = item,
+                    color = Color.White.copy(alpha = 0.82f + glow * 0.18f),
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Medium
+                )
             }
         }
     }

@@ -18,6 +18,10 @@ Smaran (स्मरण — *remembrance*) is a modern, lightweight, offline-fir
 
 ---
 
+## 📸 Demo
+
+---
+
 ## 🛠️ Tech Stack
 
 | Technology | Purpose |
@@ -91,18 +95,17 @@ For feature requests, describe the problem it solves and how you expect it to wo
 
 ---
 
-## 👨‍💻 Author
+## 🧑‍💻 Developer
 
-**Akash Pramanik** — [@akash098p](https://github.com/akash098p)
+**Akash Pramanik**
 
-Repository: [Smaran](https://github.com/akash098p/Smaran)
+<p>
+  <strong>For questions or support: </strong>
+<a href="https://instagram.com/akash.098p" target="_blank">
+  <img src="https://img.shields.io/badge/akash.098p-E4405F?style=flat&logo=instagram&logoColor=white"/>
+</a>
 
----
-
-<div align="center">
-
-**Built to help you remember what matters.**
-
-⭐ Star the repository if you like the idea.
-
-</div>
+<a href="mailto:akashpramanik098@gmail.com">
+  <img src="https://img.shields.io/badge/akashpramanik422%40gmail.com-D14836?style=flat&logo=gmail&logoColor=white"/>
+</a>
+</p>

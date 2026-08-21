@@ -15,6 +15,14 @@ class AppPreferences(context: Context) {
         get() = reminder.vibrationEnabled
         set(value) { reminder.vibrationEnabled = value }
 
+    var alarmStyleEnabled: Boolean
+        get() = reminder.alarmStyleEnabled
+        set(value) { reminder.alarmStyleEnabled = value }
+
+    var customSoundUri: String
+        get() = reminder.customSoundUri
+        set(value) { reminder.customSoundUri = value }
+
     var defaultSnoozeMinutes: Int
         get() = reminder.defaultSnoozeMinutes
         set(value) { reminder.defaultSnoozeMinutes = value }

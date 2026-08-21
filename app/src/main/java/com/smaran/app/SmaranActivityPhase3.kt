@@ -196,7 +196,17 @@ private fun SmaranPhase3(context: Context) {
         }
     }
 
-    if (showEditor) TaskEditorPhase3(editor, initialDate = editorDate, onDismiss = { showEditor = false }) { task ->
+    if (showEditor) TaskEditorPhase3(
+        existing = editor,
+        initialDate = editorDate,
+        onDismiss = { showEditor = false },
+        onDelete = if (editor != null) {
+            {
+                delete(editor!!, store, scheduler, history) { refresh++ }
+                showEditor = false
+            }
+        } else null
+    ) { task ->
         if (editor == null) history.record(task.id, HistoryAction.CREATED, next = task.date.atTime(task.time))
         else history.record(task.id, HistoryAction.RESCHEDULED, editor!!.date.atTime(editor!!.time), task.date.atTime(task.time))
         scheduler.cancel(task.id)
@@ -1544,9 +1554,9 @@ private fun TaskCategoryPill(category: String, accent: Color) {
     }
 }
 
-@Composable private fun TaskEditorPhase3(existing: Task?, initialDate: LocalDate = LocalDate.now(), onDismiss: () -> Unit, onSave: (Task) -> Unit) {
+@Composable private fun TaskEditorPhase3(existing: Task?, initialDate: LocalDate = LocalDate.now(), onDismiss: () -> Unit, onDelete: (() -> Unit)?, onSave: (Task) -> Unit) {
     val context = LocalContext.current; var title by remember(existing) { mutableStateOf(existing?.title ?: "") }; var description by remember(existing) { mutableStateOf(existing?.description ?: "") }; var date by remember(existing) { mutableStateOf(existing?.date ?: initialDate) }; var time by remember(existing) { mutableStateOf(existing?.time ?: LocalTime.now().plusHours(1).withMinute(0)) }; var category by remember(existing) { mutableStateOf(existing?.category ?: "Personal") }; var priority by remember(existing) { mutableStateOf(existing?.priority ?: Priority.MEDIUM) }; var recurring by remember(existing) { mutableStateOf(existing?.recurring ?: false) }
-    AlertDialog(onDismissRequest = onDismiss, title = { Text(if(existing == null) "Create Task" else "Edit / Reschedule") }, text = { Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    AlertDialog(onDismissRequest = onDismiss, title = { Row(verticalAlignment = Alignment.CenterVertically) { Text(if(existing == null) "Create Task" else "Edit / Reschedule", Modifier.weight(1f)); if (onDelete != null) IconButton(onClick = onDelete) { Icon(Icons.Default.DeleteOutline, "Delete task", tint = Color(0xFFE35D5D)) } } }, text = { Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         OutlinedTextField(title, { title = it }, Modifier.fillMaxWidth(), singleLine = true, label = { Text("Task title") }); OutlinedTextField(description, { description = it }, Modifier.fillMaxWidth(), label = { Text("Description (optional)") })
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) { OutlinedButton({ DatePickerDialog(context, { _, y, m, d -> date = LocalDate.of(y, m + 1, d) }, date.year, date.monthValue - 1, date.dayOfMonth).show() }, Modifier.weight(1f)) { Text(date.toString()) }; OutlinedButton({ TimePickerDialog(context, { _, h, m -> time = LocalTime.of(h, m) }, time.hour, time.minute, true).show() }, Modifier.weight(1f)) { Text(time.format(DateTimeFormatter.ofPattern("hh:mm a"))) } }
         Text("Category", color = Muted, fontSize = 11.sp)

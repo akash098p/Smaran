@@ -223,7 +223,7 @@ private fun delete(task: Task, store: TaskStore, scheduler: ReminderScheduler, h
 @Composable private fun HomePhase3(tasks: List<Task>, onComplete: (Task) -> Unit) {
     val context = LocalContext.current
     val profile = remember { ProfilePreferences(context) }
-    val name = remember(profile.name) { profile.name.ifBlank { "Akash" } }
+    val name = remember(profile.name) { profile.name.ifBlank { "User" } }
     val today = LocalDate.now(); val list = tasks.filter { it.date == today }.sortedBy { it.time }
     LazyColumn(Modifier.fillMaxSize().padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp), contentPadding = PaddingValues(bottom = 80.dp)) {
         item {
@@ -242,7 +242,7 @@ private fun delete(task: Task, store: TaskStore, scheduler: ReminderScheduler, h
 @Composable private fun HomePhase3Modern(tasks: List<Task>, onComplete: (Task) -> Unit, onViewAll: () -> Unit, onOpenProfile: () -> Unit, onOpenNotifications: () -> Unit) {
     val context = LocalContext.current
     val profile = remember { ProfilePreferences(context) }
-    val name = remember(profile.name) { profile.name.ifBlank { "Akash" } }
+    val name = remember(profile.name) { profile.name.ifBlank { "User" } }
     val today = LocalDate.now()
     val list = tasks.filter { it.date == today }.sortedBy { it.time }
     val hasNotifications = tasks.any { !it.completed && it.date <= today.plusDays(1) }

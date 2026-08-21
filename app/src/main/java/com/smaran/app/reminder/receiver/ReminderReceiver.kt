@@ -133,10 +133,23 @@ class ReminderReceiver : BroadcastReceiver() {
     private fun startAlarmSound(context: Context, soundUri: Uri) {
         synchronized(soundLock) {
             alarmPlayer?.release()
-            alarmPlayer = MediaPlayer.create(context.applicationContext, soundUri)?.apply {
-                isLooping = true
-                setOnErrorListener { player, _, _ -> player.release(); alarmPlayer = null; true }
-                start()
+            alarmPlayer = runCatching {
+                MediaPlayer().apply {
+                    setAudioAttributes(
+                        AudioAttributes.Builder()
+                            .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+                            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                            .build()
+                    )
+                    setDataSource(context.applicationContext, soundUri)
+                    isLooping = true
+                    setOnErrorListener { player, _, _ -> player.release(); alarmPlayer = null; true }
+                    prepare()
+                    start()
+                }
+            }.getOrElse {
+                alarmPlayer = null
+                null
             }
             soundHandler.removeCallbacksAndMessages(null)
             soundHandler.postDelayed({ stopAlarmSound() }, 60_000L)

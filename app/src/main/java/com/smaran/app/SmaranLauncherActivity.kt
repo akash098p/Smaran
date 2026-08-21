@@ -5,6 +5,14 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.Image
@@ -205,40 +213,54 @@ class SmaranLauncherActivity : ComponentActivity() {
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 verticalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    HeroArt(step = step, page = page)
-                                    Spacer(Modifier.height(18.dp))
-
-                                    Text(
-                                        text = step.title,
-                                        color = Color.White,
-                                        fontSize = 27.sp,
-                                        lineHeight = 31.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        textAlign = TextAlign.Center
-                                    )
-
-                                    Spacer(Modifier.height(12.dp))
-
-                                    if (page < 4) {
-                                        Text(
-                                            text = step.body,
-                                            color = OnboardingMuted,
-                                            fontSize = 15.sp,
-                                            lineHeight = 22.sp,
-                                            textAlign = TextAlign.Center,
-                                            modifier = Modifier.padding(horizontal = 4.dp)
-                                        )
-                                    } else {
-                                        NamePanel(
-                                            nameInput = nameInput,
-                                            onNameChange = { nameInput = it }
-                                        )
-                                    }
-
-                                    if (page < 4) {
+                                AnimatedContent(
+                                    targetState = page,
+                                    transitionSpec = {
+                                        val direction = if (targetState > initialState) 1 else -1
+                                        ((slideInHorizontally(animationSpec = tween(220)) { width -> width * direction } +
+                                            scaleIn(animationSpec = tween(220), initialScale = 0.88f)) togetherWith
+                                            (slideOutHorizontally(animationSpec = tween(220)) { width -> -width * direction } +
+                                                scaleOut(animationSpec = tween(220), targetScale = 0.88f)))
+                                            .using(SizeTransform(clip = false))
+                                    },
+                                    label = "onboarding_tumble"
+                                ) { selectedPage ->
+                                    val selectedStep = steps[selectedPage]
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        HeroArt(step = selectedStep, page = selectedPage)
                                         Spacer(Modifier.height(18.dp))
-                                        ChipRow(items = step.chips, accent = step.accent)
+
+                                        Text(
+                                            text = selectedStep.title,
+                                            color = Color.White,
+                                            fontSize = 27.sp,
+                                            lineHeight = 31.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            textAlign = TextAlign.Center
+                                        )
+
+                                        Spacer(Modifier.height(12.dp))
+
+                                        if (selectedPage < 4) {
+                                            Text(
+                                                text = selectedStep.body,
+                                                color = OnboardingMuted,
+                                                fontSize = 15.sp,
+                                                lineHeight = 22.sp,
+                                                textAlign = TextAlign.Center,
+                                                modifier = Modifier.padding(horizontal = 4.dp)
+                                            )
+                                        } else {
+                                            NamePanel(
+                                                nameInput = nameInput,
+                                                onNameChange = { nameInput = it }
+                                            )
+                                        }
+
+                                        if (selectedPage < 4) {
+                                            Spacer(Modifier.height(18.dp))
+                                            ChipRow(items = selectedStep.chips, accent = selectedStep.accent)
+                                        }
                                     }
                                 }
 

@@ -1,6 +1,7 @@
 package com.smaran.app.settings
 
 import android.content.Context
+import android.content.Intent
 import android.graphics.BitmapFactory
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -196,6 +197,15 @@ private fun ProfileEditor(profile: ProfilePreferences, onSaved: () -> Unit, onBa
 @Composable
 private fun SettingsDetailPage(title: String, state: SettingsUiState, manager: SettingsManager, context: Context, refresh: () -> Unit, onBack: () -> Unit) {
     val colorScheme = MaterialTheme.colorScheme
+    val soundPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) {
+            runCatching {
+                context.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            manager.setCustomSoundUri(uri.toString())
+            refresh()
+        }
+    }
     LazyColumn(Modifier.fillMaxSize().padding(horizontal = 20.dp), contentPadding = PaddingValues(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item { Row(verticalAlignment = Alignment.CenterVertically) { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Back", tint = colorScheme.onSurface) }; Text(title, fontSize = 25.sp, fontWeight = FontWeight.Bold, color = colorScheme.onSurface) } }
         item {
@@ -216,13 +226,16 @@ private fun SettingsDetailPage(title: String, state: SettingsUiState, manager: S
                         "Backup & Restore" -> InfoBlock(Icons.Default.Backup, "Backup & Restore", "Backup controls can be added here without changing the current task store.")
                         "Data & Storage" -> InfoBlock(Icons.Default.Storage, "Data & Storage", "Your current task data remains stored locally on this device.")
                         "Notifications" -> {
-                            SettingSwitch("Reminder sound", "Play sound with reminder notifications", Icons.Default.VolumeUp, state.soundEnabled) { manager.setSoundEnabled(it); refresh() }
-                            SettingSwitch("Vibration", "Vibrate for reminder notifications", Icons.Default.Vibration, state.vibrationEnabled) { manager.setVibrationEnabled(it); refresh() }
-                            SettingAction("Exact alarm permission", "Allow reliable scheduled reminders", Icons.Default.Alarm, context) { AlarmPermissionHelper.openExactAlarmSettings(context) }
-                            Text("Default snooze", fontWeight = FontWeight.Bold, color = colorScheme.onSurface, modifier = Modifier.padding(top = 8.dp))
-                            SettingsScreenModel.snoozeOptions().forEach { minutes ->
-                                SettingChoice(SettingsScreenModel.snoozeLabel(minutes), minutes == state.defaultSnoozeMinutes) {
-                                    manager.setDefaultSnoozeMinutes(minutes)
+                            SettingSwitch("Alarm-style notification", "Loop the reminder sound until snoozed or completed", Icons.Default.Alarm, state.alarmStyleEnabled) { manager.setAlarmStyleEnabled(it); refresh() }
+                            SettingAction(
+                                "Notification sound",
+                                if (state.customSoundUri.isBlank()) "Use the default Smaran sound" else "Custom sound selected",
+                                Icons.Default.MusicNote,
+                                context
+                            ) { soundPicker.launch(arrayOf("audio/*")) }
+                            if (state.customSoundUri.isNotBlank()) {
+                                SettingAction("Use default sound", "Restore the bundled Smaran notification sound", Icons.Default.RestartAlt, context) {
+                                    manager.setCustomSoundUri("")
                                     refresh()
                                 }
                             }
@@ -242,7 +255,7 @@ private fun SettingsDetailPage(title: String, state: SettingsUiState, manager: S
                             Spacer(Modifier.height(4.dp))
                             Text(
                                 "We'd love to hear from you! If you encounter any issues or have suggestions to improve Smaran, " +
-                                "please reach out to us at:",
+                                    "please reach out to us at:",
                                 color = colorScheme.onSurfaceVariant, fontSize = 13.sp, textAlign = TextAlign.Start
                             )
                             Spacer(Modifier.height(8.dp))

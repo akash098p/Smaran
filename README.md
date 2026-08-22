@@ -35,7 +35,7 @@ Smaran (स्मरण — *remembrance*) is a modern, lightweight, offline-fir
   <img src="https://github.com/user-attachments/assets/5d6e8eb1-67ba-41ae-abcc-f665eca46959" width="49%">
 </p>
 
-
+Download Smaran from here:  🔴[DOWNLOAD!](https://github.com/akash098p/Smaran_smart-reminder-app/releases/download/v1.0.0/Smaran-v1.0.0.apk)
 
 
 ---

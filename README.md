@@ -48,6 +48,19 @@ Smaran (स्मरण — *remembrance*) is a modern, lightweight, offline-fir
 
 ---
 
+### 🧰 Technologies & Capabilities
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Kotlin-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white" alt="Kotlin" />
+  <img src="https://img.shields.io/badge/Jetpack_Compose-4285F4?style=for-the-badge&logo=android&logoColor=white" alt="Jetpack Compose" />
+  <img src="https://img.shields.io/badge/Material_3-6750A4?style=for-the-badge&logo=materialdesign&logoColor=white" alt="Material 3" />
+  <img src="https://img.shields.io/badge/Room-3DDC84?style=for-the-badge&logo=android&logoColor=white" alt="Room" />
+  <img src="https://img.shields.io/badge/Offline--First-2E7D32?style=for-the-badge&logo=android&logoColor=white" alt="Offline First" />
+  <img src="https://img.shields.io/badge/Mobile-Responsive-00A67E?style=for-the-badge&logo=android&logoColor=white" alt="Mobile" />
+</p>
+
+---
+
 ## 🚀 Getting Started
 
 ### Prerequisites

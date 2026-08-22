@@ -244,7 +244,7 @@ private fun SettingsDetailPage(title: String, state: SettingsUiState, manager: S
                         "About Smaran" -> {
                             InfoBlock(Icons.Default.Info, "About Smaran", "Smaran — Remember. Plan. Achieve.")
                             Spacer(Modifier.height(8.dp))
-                            Text("1.8", color = colorScheme.onSurfaceVariant, fontSize = 14.sp, fontWeight = FontWeight.Medium, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+                            Text("1.0.0", color = colorScheme.onSurfaceVariant, fontSize = 14.sp, fontWeight = FontWeight.Medium, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
                             Spacer(Modifier.height(8.dp))
                             Text(
                                 "A simple, private task manager that helps you remember and plan your day.",

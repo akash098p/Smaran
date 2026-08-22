@@ -452,7 +452,6 @@ private fun NameInputField(value: String, onValueChange: (String) -> Unit) {
             singleLine = true,
             shape = shape,
             label = { Text("Your name") },
-            placeholder = { Text("e.g. Akash") },
             leadingIcon = {
                 androidx.compose.material3.Icon(
                     imageVector = Icons.Default.Person,

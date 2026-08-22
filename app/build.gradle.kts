@@ -12,8 +12,8 @@ android {
         applicationId = "com.smaran.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 8
-        versionName = "1.8"
+        versionCode = 1
+        versionName = "1.0.0"
     }
 
     buildFeatures {
